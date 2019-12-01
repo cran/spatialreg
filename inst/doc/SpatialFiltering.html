@@ -324,18 +324,73 @@ contribution only just improves the fit of the GLM model.</p>
 set.seed(111)
 </code></pre>
 
-<pre><code class="r">nyME &lt;- ME(Cases~PEXPOSURE+PCTAGE65P+PCTOWNHOME, data=NY8, offset=log(POP8), family=&quot;poisson&quot;, listw=NYlistwW, alpha=0.5)
+<pre><code class="r">nyME &lt;- ME(Cases~PEXPOSURE+PCTAGE65P+PCTOWNHOME, data=NY8, offset=log(POP8), family=&quot;poisson&quot;, listw=NYlistwW, alpha=0.44)
 </code></pre>
 
 <pre><code class="r">nyME
-NY8$eigen_24 &lt;- fitted(nyME)[,1]
+</code></pre>
+
+<pre><code>##   Eigenvector ZI pr(ZI)
+## 0          NA NA   0.31
+## 1          24 NA   0.44
+## 2         223 NA   0.42
+## 3         206 NA   0.43
+## 4         169 NA   0.48
+</code></pre>
+
+<pre><code class="r">NY8$eigen_24 &lt;- fitted(nyME)[,1]
 NY8$eigen_223 &lt;- fitted(nyME)[,2]
 </code></pre>
 
 <pre><code class="r">nyglmME &lt;- glm(Cases~PEXPOSURE+PCTAGE65P+PCTOWNHOME+offset(log(POP8))+fitted(nyME), data=NY8, family=&quot;poisson&quot;)
 summary(nyglmME)
-nyGLMp &lt;- glm(Cases~PEXPOSURE+PCTAGE65P+PCTOWNHOME+offset(log(POP8)), data=NY8,family=&quot;poisson&quot;)
+</code></pre>
+
+<pre><code>## 
+## Call:
+## glm(formula = Cases ~ PEXPOSURE + PCTAGE65P + PCTOWNHOME + offset(log(POP8)) + 
+##     fitted(nyME), family = &quot;poisson&quot;, data = NY8)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.9695  -0.9875  -0.2365   0.6506   3.3866  
+## 
+## Coefficients:
+##                    Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)        -8.13431    0.18388 -44.237  &lt; 2e-16 ***
+## PEXPOSURE           0.14136    0.03134   4.511 6.45e-06 ***
+## PCTAGE65P           4.16875    0.60149   6.931 4.19e-12 ***
+## PCTOWNHOME         -0.39290    0.19222  -2.044  0.04096 *  
+## fitted(nyME)vec24   1.62658    0.72243   2.252  0.02435 *  
+## fitted(nyME)vec223  0.92941    0.70391   1.320  0.18671    
+## fitted(nyME)vec206 -0.11559    0.68987  -0.168  0.86693    
+## fitted(nyME)vec169 -1.82674    0.68142  -2.681  0.00735 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for poisson family taken to be 1)
+## 
+##     Null deviance: 428.25  on 280  degrees of freedom
+## Residual deviance: 340.08  on 273  degrees of freedom
+## AIC: Inf
+## 
+## Number of Fisher Scoring iterations: 5
+</code></pre>
+
+<pre><code class="r">nyGLMp &lt;- glm(Cases~PEXPOSURE+PCTAGE65P+PCTOWNHOME+offset(log(POP8)), data=NY8,family=&quot;poisson&quot;)
 anova(nyGLMp, nyglmME, test=&quot;Chisq&quot;)
+</code></pre>
+
+<pre><code>## Analysis of Deviance Table
+## 
+## Model 1: Cases ~ PEXPOSURE + PCTAGE65P + PCTOWNHOME + offset(log(POP8))
+## Model 2: Cases ~ PEXPOSURE + PCTAGE65P + PCTOWNHOME + offset(log(POP8)) + 
+##     fitted(nyME)
+##   Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)  
+## 1       277     353.35                       
+## 2       273     340.08  4   13.269  0.01003 *
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 </code></pre>
 
 <p>Figure \[fig:geigen2\] shows the spatial patterns chosen to match the
@@ -345,7 +400,7 @@ significant. Since, however, many TCE sites are also in or close to more
 densely populated urban areas with the possible presence of both
 point-source and non-point-source pollution, it would be premature to
 take such results simply at their face value. There is, however, a
-potentially useful contrast between the cities of Binghampton in the
+potentially useful contrast between the cities of Binghamton in the
 south of the study area with several sites in its vicinity, and Syracuse
 in the north without TCE sites in this data set.</p>
 
