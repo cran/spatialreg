@@ -3,14 +3,14 @@
 \alias{lagsarlm}
 \alias{errorsarlm}
 \alias{sacsarlm}
-\alias{summary.sarlm}
-\alias{print.sarlm}
-\alias{print.summary.sarlm}
-\alias{residuals.sarlm}
-\alias{deviance.sarlm}
-\alias{coef.sarlm}
-\alias{vcov.sarlm}
-\alias{fitted.sarlm}
+\alias{summary.Sarlm}
+\alias{print.Sarlm}
+\alias{print.summary.Sarlm}
+\alias{residuals.Sarlm}
+\alias{deviance.Sarlm}
+\alias{coef.Sarlm}
+\alias{vcov.Sarlm}
+\alias{fitted.Sarlm}
 
 \title{Spatial simultaneous autoregressive model estimation by maximum likelihood}
 
@@ -49,16 +49,16 @@ sacsarlm(formula, data = list(), listw, listw2 = NULL, na.action, Durbin, type,
  method="eigen", quiet=NULL, zero.policy=NULL, tol.solve=.Machine$double.eps,
  llprof=NULL, interval1=NULL, interval2=NULL, trs1=NULL, trs2=NULL,
  control = list())
-\method{summary}{sarlm}(object, correlation = FALSE, Nagelkerke = FALSE,
+\method{summary}{Sarlm}(object, correlation = FALSE, Nagelkerke = FALSE,
  Hausman=FALSE, adj.se=FALSE, ...)
-\method{print}{sarlm}(x, ...)
-\method{print}{summary.sarlm}(x, digits = max(5, .Options$digits - 3),
+\method{print}{Sarlm}(x, ...)
+\method{print}{summary.Sarlm}(x, digits = max(5, .Options$digits - 3),
  signif.stars = FALSE, ...)
-\method{residuals}{sarlm}(object, ...)
-\method{deviance}{sarlm}(object, ...)
-\method{coef}{sarlm}(object, ...)
-\method{vcov}{sarlm}(object, ...)
-\method{fitted}{sarlm}(object, ...)
+\method{residuals}{Sarlm}(object, ...)
+\method{deviance}{Sarlm}(object, ...)
+\method{coef}{Sarlm}(object, ...)
+\method{vcov}{Sarlm}(object, ...)
+\method{fitted}{Sarlm}(object, ...)
 }
 \arguments{
   \item{formula}{a symbolic description of the model to be fit. The details 
@@ -85,13 +85,13 @@ neighbours, if FALSE (default) assign NA - causing \code{lagsarlm()} to terminat
   \item{interval1, interval2}{default is NULL, search intervals for each weights object for autoregressive parameters}
   \item{trs}{default NULL, if given, a vector of powered spatial weights matrix traces output by \code{trW}; when given, insert the asymptotic analytical values into the numerical Hessian instead of the approximated values; may be used to get around some problems raised when the numerical Hessian is poorly conditioned, generating NaNs in subsequent operations; the use of trs is recommended}
  \item{control}{list of extra control arguments - see section below}
-  \item{object}{\code{sarlm} object from \code{lagsarlm}, \code{errorsarlm} or \code{sacsarlm}}
+  \item{object}{\code{Sarlm} object from \code{lagsarlm}, \code{errorsarlm} or \code{sacsarlm}}
   \item{correlation}{logical; if 'TRUE', the correlation matrix of the estimated parameters including sigma is returned and printed (default=FALSE)}
   \item{Nagelkerke}{if TRUE, the Nagelkerke pseudo R-squared is reported}
   \item{Hausman}{if TRUE, the results of the Hausman test for error models are reported}
   \item{adj.se}{if TRUE, adjust the coefficient standard errors for the number of fitted coefficients}
-  \item{x}{\code{sarlm} object from \code{lagsarlm}, \code{errorsarlm} or \code{sacsarlm} in \code{print.sarlm}, summary object from \code{summary.sarlm} for 
-\code{print.summary.sarlm}}
+  \item{x}{\code{Sarlm} object from \code{lagsarlm}, \code{errorsarlm} or \code{sacsarlm} in \code{print.Sarlm}, summary object from \code{summary.Sarlm} for 
+\code{print.summary.Sarlm}}
   \item{digits}{the number of significant digits to use when printing}
   \item{signif.stars}{logical. If TRUE, "significance stars" are printed
           for each coefficient.}
@@ -114,7 +114,7 @@ noise (residuals). Since the values of the response variable are known,
 their spatial lags are used to calculate signal components (Cressie 1993, 
 p. 564). This differs from other software, including GeoDa, which does not use 
 knowledge of the response variable in making predictions for the fitting data. 
-Refer to the help page of \code{\link{predict.sarlm}} for discussions and 
+Refer to the help page of \code{\link{predict.Sarlm}} for discussions and 
 references.
 
 Because numerical optimisation is used to find the values of lambda and rho in \code{sacsarlm}, care needs to be shown. It has been found that the surface of the 2D likelihood function often forms a \dQuote{banana trench} from (low rho, high lambda) through (high rho, high lambda) to (high rho, low lambda) values. In addition, sometimes the banana has optima towards both ends, one local, the other global, and conseqently the choice of the starting point for the final optimization becomes crucial. The default approach is not to use just (0, 0) as a starting point, nor the (rho, lambda) values from \code{gstsls}, which lie in a central part of the \dQuote{trench}, but either four values at (low rho, high lambda), (0, 0), (high rho, high lambda), and (high rho, low lambda), and to use the best of these start points for the final optimization. Optionally, nine points can be used spanning the whole (lower, upper) space.
@@ -185,7 +185,8 @@ W <- as(listw, "CsparseMatrix")
 trMatc <- trW(W, type="mult")
 COL.lag.eig <- lagsarlm(CRIME ~ INC + HOVAL, data=COL.OLD, listw=listw,
  method="eigen", quiet=FALSE, control=list(pre_eig=ev, OrdVsign=1))
-summary(COL.lag.eig, correlation=TRUE)
+(x <- summary(COL.lag.eig, correlation=TRUE))
+coef(x)
 \dontrun{
 COL.lag.eig$fdHess
 COL.lag.eig$resvar
@@ -214,16 +215,15 @@ COL.lag.eig1$fdHess[1,1]
 COL.lag.eig1a$fdHess[2,2]
 }
 system.time(COL.lag.M <- lagsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- spdep::nb2listw(COL.nb), method="Matrix", quiet=FALSE))
+ listw, method="Matrix", quiet=FALSE))
 summary(COL.lag.M)
-impacts(COL.lag.M, listw=spdep::nb2listw(COL.nb))
+impacts(COL.lag.M, listw=listw)
 \dontrun{
 system.time(COL.lag.sp <- lagsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
  listw=listw, method="spam", quiet=FALSE))
 summary(COL.lag.sp)
-}
 COL.lag.B <- lagsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- spdep::nb2listw(COL.nb, style="B"))
+ spdep::nb2listw(COL.nb, style="B"), control=list(pre_eig=ev))
 summary(COL.lag.B)
 COL.mixed.B <- lagsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
  spdep::nb2listw(COL.nb, style="B"), type="mixed", tol.solve=1e-9,
@@ -270,6 +270,7 @@ COL.lag.NA2$na.action
 COL.lag.NA3 <- lagsarlm(CRIME ~ INC + HOVAL, data=NA.COL.OLD,
  listw, control=list(pre_eig=ev))
 COL.lag.NA3$na.action
+}
 
 \dontrun{
 data(boston, package="spData")
@@ -285,87 +286,80 @@ data=boston.c, spdep::nb2listw(boston.soi), type="mixed", method="Matrix",
 trs=trMatb)
 summary(gp2mMi)
 }
-lw <- spdep::nb2listw(COL.nb, style="W")
 COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, quiet=FALSE, control=list(pre_eig=ev))
+ listw, quiet=FALSE, control=list(pre_eig=ev))
 summary(COL.errW.eig)
 COL.errW.eig_ev <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, control=list(pre_eig=ev))
+ listw, control=list(pre_eig=ev))
 all.equal(coefficients(COL.errW.eig), coefficients(COL.errW.eig_ev))
 COL.errB.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
  spdep::nb2listw(COL.nb, style="B"))
 summary(COL.errB.eig)
-W <- as(spdep::nb2listw(COL.nb), "CsparseMatrix")
-trMatc <- trW(W, type="mult")
 COL.errW.M <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="Matrix", quiet=FALSE, trs=trMatc)
+ listw, method="Matrix", quiet=FALSE, trs=trMatc)
 summary(COL.errW.M)
 COL.SDEM.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, etype="emixed", control=list(pre_eig=ev))
+ listw, etype="emixed", control=list(pre_eig=ev))
 summary(COL.SDEM.eig)
+\dontrun{
 COL.SDEM.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, Durbin=TRUE, control=list(pre_eig=ev))
+ listw, Durbin=TRUE, control=list(pre_eig=ev))
 summary(COL.SDEM.eig)
 COL.SDEM.eig <- errorsarlm(CRIME ~ DISCBD + INC + HOVAL, data=COL.OLD,
- lw, Durbin=~INC, control=list(pre_eig=ev))
+ listw, Durbin=~INC, control=list(pre_eig=ev))
 summary(COL.SDEM.eig)
 summary(impacts(COL.SDEM.eig))
 NA.COL.OLD <- COL.OLD
 NA.COL.OLD$CRIME[20:25] <- NA
 COL.err.NA <- errorsarlm(CRIME ~ INC + HOVAL, data=NA.COL.OLD,
- spdep::nb2listw(COL.nb), na.action=na.exclude)
+ listw, na.action=na.exclude)
 COL.err.NA$na.action
 COL.err.NA
 resid(COL.err.NA)
-\dontrun{
-lw <- spdep::nb2listw(COL.nb, style="W")
-print(system.time(ev <- eigenw(similar.listw(lw))))
+print(system.time(ev <- eigenw(similar.listw(listw))))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="eigen", control=list(pre_eig=ev))))
+ listw, method="eigen", control=list(pre_eig=ev))))
 ocoef <- coefficients(COL.errW.eig)
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="eigen", control=list(pre_eig=ev, LAPACK=FALSE))))
+ listw, method="eigen", control=list(pre_eig=ev, LAPACK=FALSE))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="eigen", control=list(pre_eig=ev, compiled_sse=TRUE))))
+ listw, method="eigen", control=list(pre_eig=ev, compiled_sse=TRUE))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="Matrix_J", control=list(super=TRUE))))
+ listw, method="Matrix_J", control=list(super=TRUE))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="Matrix_J", control=list(super=FALSE))))
+ listw, method="Matrix_J", control=list(super=FALSE))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="Matrix_J", control=list(super=as.logical(NA)))))
+ listw, method="Matrix_J", control=list(super=as.logical(NA)))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="Matrix", control=list(super=TRUE))))
+ listw, method="Matrix", control=list(super=TRUE))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="Matrix", control=list(super=FALSE))))
+ listw, method="Matrix", control=list(super=FALSE))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="Matrix", control=list(super=as.logical(NA)))))
+ listw, method="Matrix", control=list(super=as.logical(NA)))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="spam", control=list(spamPivot="MMD"))))
+ listw, method="spam", control=list(spamPivot="MMD"))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="spam", control=list(spamPivot="RCM"))))
+ listw, method="spam", control=list(spamPivot="RCM"))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="spam_update", control=list(spamPivot="MMD"))))
+ listw, method="spam_update", control=list(spamPivot="MMD"))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 print(system.time(COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- lw, method="spam_update", control=list(spamPivot="RCM"))))
+ listw, method="spam_update", control=list(spamPivot="RCM"))))
 print(all.equal(ocoef, coefficients(COL.errW.eig)))
 }
-listw <- spdep::nb2listw(COL.nb, style="W")
 COL.sacW.eig <- sacsarlm(CRIME ~ INC + HOVAL, data=COL.OLD, listw,
  control=list(pre_eig1=ev, pre_eig2=ev))
 summary(COL.sacW.eig)
-W <- as(listw, "CsparseMatrix")
-trMatc <- trW(W, type="mult")
 set.seed(1)
 summary(impacts(COL.sacW.eig, tr=trMatc, R=2000), zstats=TRUE, short=TRUE)
 COL.msacW.eig <- sacsarlm(CRIME ~ INC + HOVAL, data=COL.OLD, listw,
@@ -384,10 +378,10 @@ summary(COL.msacW2.eig)
 summary(impacts(COL.msacW2.eig, tr=trMatc, R=2000), zstats=TRUE, short=TRUE)
 \dontrun{
 COL.mix.eig <- lagsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- spdep::nb2listw(COL.nb), type="mixed", method="eigen")
+ listw, type="mixed", method="eigen")
 summary(COL.mix.eig, correlation=TRUE, Nagelkerke=TRUE)
 COL.mix.M <- lagsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
- spdep::nb2listw(COL.nb), type="mixed", method="Matrix")
+ listw, type="mixed", method="Matrix")
 summary(COL.mix.M, correlation=TRUE, Nagelkerke=TRUE)
 COL.errW.eig <- errorsarlm(CRIME ~ INC + HOVAL, data=COL.OLD,
   spdep::nb2listw(COL.nb, style="W"), method="eigen")

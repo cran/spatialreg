@@ -277,11 +277,12 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                     } else {
                         rownames(cm) <- xxcolnames[1:m2]
                     }
-                    for (i in 1:m2) cm[i, c(i+1, i+(m2+1))] <- 1
+                    LI <- ifelse(!(listw$style == "W"), 1, 0) #TR: lagged intercept
+                    for (i in 1:m2) cm[i, c(i+1, i+(m2+1 + LI)) ] <- 1 #TR: Add to index
 # drop bug fix 2016-09-21 Philipp Hunziker
                     dirImps <- sum_lm_target$coefficients[2:(m2+1), 1:2, drop=FALSE]
                     rownames(dirImps) <- rownames(cm)
-                    indirImps <- sum_lm_target$coefficients[(m2+2):m, 1:2, drop=FALSE]
+                    indirImps <- sum_lm_target$coefficients[((m2 + 2):m + LI), 1:2, drop=FALSE] #TR: Add to index
                     rownames(indirImps) <- rownames(cm)
                 } else {
                     rownames(cm) <- xxcolnames[1:m2]
@@ -483,7 +484,7 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                 f_calls=get("f_calls", envir=env),
                 hf_calls=get("hf_calls", envir=env), intern_classic=iC,
                 pWinternal=pWinternal, weights=weights, emixedImps=emixedImps),
-                class=c("sarlm"))
+                class=c("Sarlm"))
         rm(env)
         GC <- gc()
 	if (zero.policy) {
@@ -855,7 +856,7 @@ lagsarlm <- function(formula, data = list(), listw,
                 timings=do.call("rbind", timings)[, c(1, 3)], 
                 f_calls=get("f_calls", envir=env),
                 hf_calls=get("hf_calls", envir=env), intern_classic=iC),
-                class=c("sarlm"))
+                class=c("Sarlm"))
         rm(env)
         GC <- gc()
 	if (zero.policy) {
@@ -1291,7 +1292,7 @@ sacsarlm <- function(formula, data = list(), listw, listw2=NULL, na.action,
             fdHess=fdHess, resvar=asyvar1, listw_style=listw$style,
             optimHess=FALSE, insert=FALSE, interval1=interval1,
             interval2=interval2, timings=do.call("rbind", timings)[, c(1, 3)]),
-            class=c("sarlm"))
+            class=c("Sarlm"))
         rm(env)
         GC <- gc()
         if (is.null(llprof)) ret$llprof <- llprof

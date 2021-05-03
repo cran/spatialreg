@@ -1,7 +1,7 @@
 \name{ME}
 \alias{ME}
-\alias{print.ME_res}
-\alias{fitted.ME_res}
+\alias{print.Me_res}
+\alias{fitted.Me_res}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{Moran eigenvector GLM filtering}
 \description{
@@ -32,7 +32,7 @@ ME(formula, data=list(), family = gaussian, weights, offset,
   The eigenvectors for inclusion are chosen by calculating the empirical Moran's I values for the initial model plus each of the doubly centred symmetric spatial weights matrix eigenvectors in turn. Then the first eigenvector is chosen as that with the lowest Moran's I value. The procedure is repeated until the lowest remaining Moran's I value has a permutation-based probability value above alpha. The probability value is either Hope-type or based on using the mean and standard deviation of the permutations to calculate ZI based on the stdev argument.
 }
 \value{
-An object of class \code{ME_res}:
+An object of class \code{Me_res}:
   \item{selection}{a matrix summarising the selection of eigenvectors for inclusion, with columns:
     \describe{
       \item{Eigenvector}{number of selected eigenvector}
@@ -61,6 +61,7 @@ system.time(MEbinom1 <- ME(c(hopkins_part) ~ 1, family="binomial",
  listw=lw, alpha=0.05, verbose=TRUE, nsim=49))
 glmME <- glm(c(hopkins_part) ~ 1 + fitted(MEbinom1), family="binomial")
 #anova(glmME, test="Chisq")
+coef(summary(glmME))
 anova(glmbase, glmME, test="Chisq")
 \dontrun{
 require("sf", quietly=TRUE)

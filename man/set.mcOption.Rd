@@ -49,6 +49,8 @@ if (!is.na(nc)) {
  print(exists("mom_calc"))
  if(.Platform$OS.type == "windows") {
 # forking not permitted on Windows - start cluster
+# removed for Github actions 210502
+\dontrun{
   print(get.mcOption())
   cl <- makeCluster(get.coresOption())
   print(clusterEvalQ(cl, exists("mom_calc")))
@@ -59,6 +61,7 @@ if (!is.na(nc)) {
   set.ClusterOption(NULL)
   print(clusterEvalQ(cl, exists("mom_calc")))
   stopCluster(cl)
+}
  } else {
   mcOpt <- get.mcOption()
   print(mcOpt)

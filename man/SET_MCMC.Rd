@@ -2,9 +2,9 @@
 \alias{spBreg_lag}
 \alias{spBreg_err}
 \alias{spBreg_sac}
-\alias{impacts.MCMC_sar_g}
-\alias{impacts.MCMC_sem_g}
-\alias{impacts.MCMC_sac_g}
+\alias{impacts.MCMC_sar_G}
+\alias{impacts.MCMC_sem_G}
+\alias{impacts.MCMC_sac_G}
 
 \title{Bayesian MCMC spatial simultaneous autoregressive model estimation}
 \description{
@@ -17,9 +17,9 @@ spBreg_sac(formula, data = list(), listw, listw2=NULL, na.action,
     Durbin, type, zero.policy=NULL, control=list())
 spBreg_err(formula, data = list(), listw, na.action, Durbin, etype,
     zero.policy=NULL, control=list())
-\method{impacts}{MCMC_sar_g}(obj, ..., tr=NULL, listw=NULL, evalues=NULL, Q=NULL)
-\method{impacts}{MCMC_sem_g}(obj, ..., tr=NULL, listw=NULL, evalues=NULL, Q=NULL)
-\method{impacts}{MCMC_sac_g}(obj, ..., tr=NULL, listw=NULL, evalues=NULL, Q=NULL)
+\method{impacts}{MCMC_sar_G}(obj, ..., tr=NULL, listw=NULL, evalues=NULL, Q=NULL)
+\method{impacts}{MCMC_sem_G}(obj, ..., tr=NULL, listw=NULL, evalues=NULL, Q=NULL)
+\method{impacts}{MCMC_sac_G}(obj, ..., tr=NULL, listw=NULL, evalues=NULL, Q=NULL)
 }
 
 
@@ -173,16 +173,16 @@ COL.D1.Bayes <- spBreg_lag(CRIME ~ DISCBD + INC + HOVAL, data=COL.OLD,
  listw=lw, Durbin= ~ INC)
 print(summary(COL.D1.Bayes))
 print(summary(impacts(COL.D1.Bayes, tr=trMatc), short=TRUE, zstats=TRUE))
-data(elect80, package="spData")
-lw <- spdep::nb2listw(e80_queen, zero.policy=TRUE)
-el_ml <- lagsarlm(log(pc_turnout) ~ log(pc_college) + log(pc_homeownership)
- + log(pc_income), data=elect80, listw=lw, zero.policy=TRUE, method="LU")
-print(summary(el_ml))
-set.seed(1)
-el_B <- spBreg_lag(log(pc_turnout) ~ log(pc_college) + log(pc_homeownership)
- + log(pc_income), data=elect80, listw=lw, zero.policy=TRUE)
-print(summary(el_B))
-print(el_ml$timings)
-print(attr(el_B, "timings"))
+#data(elect80, package="spData")
+#lw <- spdep::nb2listw(e80_queen, zero.policy=TRUE)
+#el_ml <- lagsarlm(log(pc_turnout) ~ log(pc_college) + log(pc_homeownership)
+# + log(pc_income), data=elect80, listw=lw, zero.policy=TRUE, method="LU")
+#print(summary(el_ml))
+#set.seed(1)
+#el_B <- spBreg_lag(log(pc_turnout) ~ log(pc_college) + log(pc_homeownership)
+# + log(pc_income), data=elect80, listw=lw, zero.policy=TRUE)
+#print(summary(el_B))
+#print(el_ml$timings)
+#print(attr(el_B, "timings"))
 }
 }

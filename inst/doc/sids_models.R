@@ -62,6 +62,7 @@ summary(ecarIVaw)
 
 ## ---- eval=is_tmap, echo=TRUE-------------------------------------------------
 nc2$fitIV <- fitted.values(ecarIVaw)
+sf_use_s2(FALSE)
 tm_shape(nc2) + tm_fill("fitIV")
 
 ## ----echo=TRUE----------------------------------------------------------------
