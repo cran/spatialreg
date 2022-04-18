@@ -1,4 +1,10 @@
-# Version 1.2-1 (development)
+# Version 1.2-3 (development)
+
+* protect definition of USE_FC_LEN_T
+
+* unescape underscores in help pages
+
+# Version 1.2-1 (2021-11-11)
 
 * Add Fortran character handling USE_FC_LEN_T WRE §6.6.1
 
