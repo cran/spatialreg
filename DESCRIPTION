@@ -1,6 +1,6 @@
 Package: spatialreg
-Version: 1.2-3
-Date: 2022-04-18
+Version: 1.2-5
+Date: 2022-08-16
 Title: Spatial Regression Analysis
 Encoding: UTF-8
 Authors@R: c(person("Roger", "Bivand", role = c("cre", "aut"), email = "Roger.Bivand@nhh.no", comment=c(ORCID="0000-0003-2392-6140")),
@@ -38,7 +38,7 @@ BugReports: https://github.com/r-spatial/spatialreg/issues/
 VignetteBuilder: knitr
 NeedsCompilation: yes
 RoxygenNote: 6.1.1
-Packaged: 2022-04-18 14:19:08 UTC; rsb
+Packaged: 2022-08-16 14:32:34 UTC; rsb
 Author: Roger Bivand [cre, aut] (<https://orcid.org/0000-0003-2392-6140>),
   Gianfranco Piras [aut],
   Luc Anselin [ctb],
@@ -63,4 +63,4 @@ Author: Roger Bivand [cre, aut] (<https://orcid.org/0000-0003-2392-6140>),
   Michael Tiefelsdorf [ctb]
 Maintainer: Roger Bivand <Roger.Bivand@nhh.no>
 Repository: CRAN
-Date/Publication: 2022-04-18 15:20:02 UTC
+Date/Publication: 2022-08-16 18:10:02 UTC

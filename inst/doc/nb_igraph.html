@@ -279,10 +279,10 @@ if (!suppressPackageStartupMessages(require(sf, quietly=TRUE))) {
 if (dothis) {
   sf_extSoftVersion()
 }</code></pre>
-<pre><code>##                  GEOS                  GDAL                proj.4 
-##              &quot;3.10.2&quot; &quot;3.5.0dev-33f49c1ed0&quot;               &quot;9.0.0&quot; 
-##        GDAL_with_GEOS            USE_PROJ_H                  PROJ 
-##                &quot;true&quot;                &quot;true&quot;               &quot;9.0.0&quot;</code></pre>
+<pre><code>##           GEOS           GDAL         proj.4 GDAL_with_GEOS     USE_PROJ_H 
+##       &quot;3.11.0&quot;        &quot;3.5.1&quot;        &quot;9.0.1&quot;         &quot;true&quot;         &quot;true&quot; 
+##           PROJ 
+##        &quot;9.0.1&quot;</code></pre>
 <pre class="r"><code>library(sf)
 columbus &lt;- st_read(system.file(&quot;shapes/columbus.shp&quot;, package=&quot;spData&quot;)[1])</code></pre>
 <pre><code>## Reading layer `columbus&#39; from data source 
@@ -298,8 +298,7 @@ columbus &lt;- st_read(system.file(&quot;shapes/columbus.shp&quot;, package=&quo
 <div id="finding-contiguous-neighbours-and-droppping-links" class="section level3">
 <h3>Finding contiguous neighbours and droppping links</h3>
 <p>Contiguous neighbours are often used for polygonal spatial entities, here with the <strong>poly2nb</strong> function defaulting to the <em>queen</em> criterion - entities are neighbours if they share a boundary point. We see that the entity IDs are copied across to the <code>nb</code> object:</p>
-<pre class="r"><code>library(spdep)
-nb_q &lt;- poly2nb(columbus)
+<pre class="r"><code>nb_q &lt;- spdep::poly2nb(columbus)
 nb_q</code></pre>
 <pre><code>## Neighbour list object:
 ## Number of regions: 49 
@@ -308,10 +307,10 @@ nb_q</code></pre>
 ## Average number of links: 4.816327</code></pre>
 <pre class="r"><code>attr(nb_q, &quot;region.id&quot;)[1:10]</code></pre>
 <pre><code>##  [1] &quot;1&quot;  &quot;2&quot;  &quot;3&quot;  &quot;4&quot;  &quot;5&quot;  &quot;6&quot;  &quot;7&quot;  &quot;8&quot;  &quot;9&quot;  &quot;10&quot;</code></pre>
-<pre class="r"><code>is.symmetric.nb(nb_q)</code></pre>
+<pre class="r"><code>spdep::is.symmetric.nb(nb_q)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <p>In order to make the object more complicated, let us drop the neighbour links for the 21st entity (noting that the print method reports the ID of the entity with no neighbours, not its number in <code>1:n</code>), and plot the resulting map of neighbours:</p>
-<pre class="r"><code>col2 &lt;- droplinks(nb_q, 21)
+<pre class="r"><code>col2 &lt;- spdep::droplinks(nb_q, 21)
 nb_q[[21]]</code></pre>
 <pre><code>## [1] 24 30 34</code></pre>
 <pre class="r"><code>col2[[21]]</code></pre>
@@ -324,7 +323,7 @@ nb_q[[21]]</code></pre>
 ## Average number of links: 4.693878 
 ## 1 region with no links:
 ## 21</code></pre>
-<pre class="r"><code>is.symmetric.nb(col2)</code></pre>
+<pre class="r"><code>spdep::is.symmetric.nb(col2)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>coords &lt;- st_coordinates(st_centroid(st_geometry(columbus)))
 plot(nb_q, coords, col=&quot;grey&quot;)
@@ -335,7 +334,7 @@ plot(col2, coords, add=TRUE)</code></pre>
 <div id="using-sparse-matrices-to-represent-spatial-weights" class="section level2">
 <h2>Using sparse matrices to represent spatial weights</h2>
 <p>At present only <code>listw</code> objects can be coerced to objects of classes defined in <strong>Matrix</strong>. Because the <code>style</code> is lost on coercion, it may not be possible to reconstruct spatial weights as the sparse matrix representation does not preserve it. We will start with symmetric binary weights, first creating a spatial weights object, and signalling that one entity has no neighbours with the <code>zero.policy</code> argument (default false). The matrix and graph representations of no-neighbour entities are not obvious.</p>
-<pre class="r"><code>nb_B &lt;- nb2listw(col2, style=&quot;B&quot;, zero.policy=TRUE)
+<pre class="r"><code>nb_B &lt;- spdep::nb2listw(col2, style=&quot;B&quot;, zero.policy=TRUE)
 nb_B$style</code></pre>
 <pre><code>## [1] &quot;B&quot;</code></pre>
 <div id="symmetric-sparse-matrices" class="section level3">
@@ -359,7 +358,7 @@ all(B == t(B))</code></pre>
 <pre class="r"><code>rownames(B)[1:10]</code></pre>
 <pre><code>##  [1] &quot;1&quot;  &quot;2&quot;  &quot;3&quot;  &quot;4&quot;  &quot;5&quot;  &quot;6&quot;  &quot;7&quot;  &quot;8&quot;  &quot;9&quot;  &quot;10&quot;</code></pre>
 <p>Let us now try to retreive the list of neighbours from the symmetric sparse matrix. At present, we have to coerce from one <strong>Matrix</strong> internal representation to another in order to get to the <code>&quot;dgCMatrix&quot;</code> format used inside <code>mat2listw</code>, so we coerce to <code>&quot;dgTMatrix&quot;</code> from <code>&quot;dsTMatrix&quot;</code>. The style is not retreived automatically, but is set to <code>&quot;M&quot;</code> to indicate conversion from a matrix. The neighbour links are retreived correctly, as are the IDs:</p>
-<pre class="r"><code>nb_B1 &lt;- mat2listw(as(B, &quot;dgTMatrix&quot;))</code></pre>
+<pre class="r"><code>nb_B1 &lt;- spdep::mat2listw(as(as(B, &quot;TsparseMatrix&quot;), &quot;CsparseMatrix&quot;))</code></pre>
 <pre><code>## Warning in sn2listw(df): 21 is not an origin</code></pre>
 <pre class="r"><code>nb_B1$style</code></pre>
 <pre><code>## [1] &quot;M&quot;</code></pre>
@@ -394,7 +393,7 @@ n * log(rho) + (2 * c(determinant(update(nChol, nW, 1/rho))$modulus))</code></pr
 <div id="asymmetric-sparse-matrices" class="section level3">
 <h3>Asymmetric sparse matrices</h3>
 <p>The use of row-standardisation leads to asymmetry even if the underlying neighbours are symmetric, unless all entities have matching numbers of neighbours (for example a regular grid on a torus):</p>
-<pre class="r"><code>nb_W &lt;- nb2listw(col2, style=&quot;W&quot;, zero.policy=TRUE)
+<pre class="r"><code>nb_W &lt;- spdep::nb2listw(col2, style=&quot;W&quot;, zero.policy=TRUE)
 W &lt;- as(nb_W, &quot;CsparseMatrix&quot;)
 str(W)</code></pre>
 <pre><code>## Formal class &#39;dgCMatrix&#39; [package &quot;Matrix&quot;] with 6 slots
@@ -424,7 +423,7 @@ all.equal(r1, r2, check.attributes=FALSE)</code></pre>
 <h3>Log determinants (asymmetric weights) used in spatial regression</h3>
 <p>Calculating the log determinant for asymmetric weights (here with symmetric neighbours and symmetry induced by non-constant numbers of neighbours) may be carried out using eigenvalues as before, but the result may be a complex vector (here it is not, as discussed below). The appropriate <code>determinant</code> method for <code>&quot;dgCMatrix&quot;</code> objects uses an LU decomposition internally:</p>
 <pre class="r"><code>rho &lt;- 0.5
-sum(log(1 - rho * spatialreg::eigenw(nb_W)))</code></pre>
+sum(log(1 - rho * eigenw(nb_W)))</code></pre>
 <pre><code>## [1] -1.594376</code></pre>
 <pre class="r"><code>class(I - rho * W)</code></pre>
 <pre><code>## [1] &quot;dgCMatrix&quot;
@@ -441,7 +440,7 @@ sum(log(abs(diag(slot(LU, &quot;U&quot;)))))</code></pre>
 <h3>Log determinants: symmetric by similarity</h3>
 <p>The <code>nb2listw</code> function stores components that can be employed to transform the asymmetric weights matrix to symmetry by similarity, permitting the same log determinant to be computed using less costly numerical methods. The <code>&quot;W&quot;</code> style used the cardinalities of neighbour sets (row sums) to introduce row standardisation, and they are stored as an attribute:</p>
 <pre class="r"><code>d &lt;- attr(nb_W$weights, &quot;comp&quot;)$d
-all.equal(d, card(col2))</code></pre>
+all.equal(d, spdep::card(col2))</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <p>If we first restore the row-standarised matrix to its binary form (which must be symmetric), we can pre- and post-multiply by the square roots of the inverted neighbour counts, yielding a symmetric matrix with the appropriate properties:</p>
 <pre class="r"><code>dW &lt;- Diagonal(n, d) %*% W
@@ -471,7 +470,7 @@ rowSums(Ws)[21]</code></pre>
 <pre class="r"><code>1/c(eigs(B, k=1, which=&quot;SR&quot;)$values, eigs(B, k=1, which=&quot;LR&quot;)$values)</code></pre>
 <pre><code>## [1] -0.3212551  0.1638329</code></pre>
 <p>In this case, the results are trivial with small <code>k</code>.</p>
-<pre class="r"><code>1/range(spatialreg::eigenw(nb_W))</code></pre>
+<pre class="r"><code>1/range(eigenw(nb_W))</code></pre>
 <pre><code>## [1] -1.544645  1.000000</code></pre>
 <pre class="r"><code>1/Re(c(eigs(W, k=1, which=&quot;SR&quot;)$values, eigs(W, k=1, which=&quot;LR&quot;)$values))</code></pre>
 <pre><code>## [1] -1.544645  1.000000</code></pre>
@@ -508,21 +507,24 @@ class(g1)</code></pre>
 <div id="converting-from-graph-to-symmetric-adjacency-matrix" class="section level3">
 <h3>Converting from graph to symmetric adjacency matrix</h3>
 <p>We can also convert this graph pack to the same matrix, but note that <code>get.adjacency</code> chooses a particular class of sparse matrix to be returned, so that the conversion process typically leads many matrices to fewer graph types, and back to fewer matrix types:</p>
-<pre class="r"><code>B1 &lt;- get.adjacency(g1)
-class(B1)</code></pre>
+<pre class="r"><code># Matrix 1.4-2 vulnerability work-around
+ow &lt;- options(&quot;warn&quot;)$warn
+options(&quot;warn&quot;=2L)
+B1 &lt;- try(get.adjacency(g1), silent=TRUE)
+if (!inherits(B1, &quot;try-error&quot;)) print(class(B1))</code></pre>
 <pre><code>## [1] &quot;dgCMatrix&quot;
 ## attr(,&quot;package&quot;)
 ## [1] &quot;Matrix&quot;</code></pre>
-<pre class="r"><code>object.size(B1)</code></pre>
+<pre class="r"><code>if (!inherits(B1, &quot;try-error&quot;)) print(object.size(B1))</code></pre>
 <pre><code>## 10824 bytes</code></pre>
-<pre class="r"><code>all.equal(B, as(as(B1, &quot;dgTMatrix&quot;), &quot;symmetricMatrix&quot;))</code></pre>
-<pre><code>## [1] &quot;Length mismatch: comparison on first 2 components&quot;
-## [2] &quot;class(target) is dgCMatrix, current is dsTMatrix&quot;</code></pre>
+<pre class="r"><code>if (!inherits(B1, &quot;try-error&quot;)) print(all.equal(B, as(B1, &quot;CsparseMatrix&quot;)))</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code>options(&quot;warn&quot;=ow)</code></pre>
 </div>
 <div id="graph-components-in-spdep" class="section level3">
 <h3>Graph components in <strong>spdep</strong></h3>
 <p>A simple example of using <strong>igraph</strong> to do the same as an existing <strong>spdep</strong> function is Nicholas Lewin-Koh’s <code>n.comp.nb</code> from the early days of the package. It is useful to know whether an <code>nb</code> object is divided up into separate subgraphs, and which entities are members of which such subgraph.</p>
-<pre class="r"><code>res &lt;- n.comp.nb(col2)
+<pre class="r"><code>res &lt;- spdep::n.comp.nb(col2)
 table(res$comp.id)</code></pre>
 <pre><code>## 
 ##  1  2  3 
@@ -539,7 +541,7 @@ c1$no == res$nc</code></pre>
 <pre class="r"><code>all.equal(c1$csize, c(table(res$comp.id)), check.attributes=FALSE)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <p>The same holds for the row-standardised variant:</p>
-<pre class="r"><code>W &lt;- as(nb2listw(col2, style=&quot;W&quot;, zero.policy=TRUE), &quot;CsparseMatrix&quot;)
+<pre class="r"><code>W &lt;- as(spdep::nb2listw(col2, style=&quot;W&quot;, zero.policy=TRUE), &quot;CsparseMatrix&quot;)
 g1W &lt;- graph.adjacency(W, mode=&quot;directed&quot;, weighted=&quot;W&quot;)
 c1W &lt;- clusters(g1W)
 all.equal(c1W$membership, res$comp.id)</code></pre>
@@ -563,13 +565,13 @@ str(sp_mat)</code></pre>
 <div id="shortest-paths-in-weights-matrices-spdep" class="section level3">
 <h3>Shortest paths in weights matrices: <strong>spdep</strong></h3>
 <p>If we do the same in <strong>spdep</strong>, using <code>nblag</code> to a maximum number of lag orders - the diameter, but which is unknown in advance (the largest lag order for which the number of links is greater than zero), we run into the problem of how to represent missing neighbour information.</p>
-<pre class="r"><code>nbl10 &lt;- nblag(col2, maxlag=10)
-vals &lt;- sapply(nbl10, function(x) sum(card(x)))
+<pre class="r"><code>nbl10 &lt;- spdep::nblag(col2, maxlag=10)
+vals &lt;- sapply(nbl10, function(x) sum(spdep::card(x)))
 zero &lt;- which(vals == 0)
 zero[1]-1</code></pre>
 <pre><code>## [1] 7</code></pre>
 <p>If we insert zero into the weights matrix where there is no connection using <code>zero.policy=TRUE</code>, we generate a zero shortest path. If we are to create a matrix that matches the one produced by <code>shortest.paths</code>, we need to set all these non-structural zeros to infinity (the length of the path between unconnected nodes), and re-instate structural zeros on the diagonal:</p>
-<pre class="r"><code>lmat &lt;- lapply(nbl10[1:(zero[1]-1)], nb2mat, style=&quot;B&quot;, zero.policy=TRUE)
+<pre class="r"><code>lmat &lt;- lapply(nbl10[1:(zero[1]-1)], spdep::nb2mat, style=&quot;B&quot;, zero.policy=TRUE)
 mat &lt;- matrix(0, n, n)
 for (i in seq(along=lmat)) mat = mat + i*lmat[[i]]
 mat[mat==0] &lt;- Inf
@@ -581,17 +583,17 @@ all.equal(mat, sp_mat, check.attributes=FALSE)</code></pre>
 <h3>Smirnov/Anselin (2009) cyclical matrices</h3>
 <p>Another area in which a graph representation might prove useful is in trying to establish the domain of the spatial coefficient when spatial weights are row-standardised. In that case by construction we know that the maximum eigenvalue is 1. If there are multiple blocks, that is graph components, where the numbers of nodes per block are greater than 1, then each will have a maximum eigenvalue of 1. The remaining problems are the numbers of zero eigenvalues (at least the singleton graph components), and whether any non-singleton component fulfills the condition termed by Smirnov and Anselin (2009) a cyclical matrix, for which the minimum eigenvalue is -1. The term cyclical appears to be used in many different ways, and it is not clear that its use here after Smirnov and Anselin (2009, pp. 2984-2985) indicates which meaning should be used to find the relevant graph function. The definition used here is that a block matrix (subgraph) is cyclical if: “for every location, every pair of its neighbours are not connected.” That is, if w[i,j] and w[i,k] are greater than zero, w[j,k] must be zero to meet the condition.</p>
 <p>The internal function find_q1_q2 returns the number of non-singleton components, and the number of these that meet this condition. It does this for each block/subgraph by testing the condition until it meets w[j,k] &gt; 0, at which point it breaks. Smirnov and Anselin (2009) state that rook neighbours on a regular grid meet the condition:</p>
-<pre class="r"><code>nb_r &lt;- cell2nb(7, 7, type=&quot;rook&quot;)
-nb_rW &lt;- nb2listw(nb_r, style=&quot;W&quot;)
+<pre class="r"><code>nb_r &lt;- spdep::cell2nb(7, 7, type=&quot;rook&quot;)
+nb_rW &lt;- spdep::nb2listw(nb_r, style=&quot;W&quot;)
 spdep:::find_q1_q2(nb_rW)</code></pre>
 <pre><code>## [1] 1 1</code></pre>
 <p>One block/graph component is found, and this one meets the cyclical matrix condition, as also shown by the domain:</p>
-<pre class="r"><code>1/range(Re(spatialreg::eigenw(spatialreg::similar.listw(nb_rW))))</code></pre>
+<pre class="r"><code>1/range(Re(eigenw(similar.listw(nb_rW))))</code></pre>
 <pre><code>## [1] -1  1</code></pre>
 <p>This does not apply to the spatial weights we have been using above, with two non-singleton components, neither meeting the cyclical matrix condition:</p>
 <pre class="r"><code>spdep:::find_q1_q2(nb_W)</code></pre>
 <pre><code>## [1] 2 0</code></pre>
-<pre class="r"><code>1/range(Re(spatialreg::eigenw(spatialreg::similar.listw(nb_W))))</code></pre>
+<pre class="r"><code>1/range(Re(eigenw(similar.listw(nb_W))))</code></pre>
 <pre><code>## [1] -1.544645  1.000000</code></pre>
 <p>By construction, all two-node connected graph components also meet the condition, as the eigenvalues sum to zero, and the maximum is unity, so the minimum must be -1.</p>
 </div>
