@@ -1,6 +1,6 @@
 Package: spatialreg
-Version: 1.2-5
-Date: 2022-08-16
+Version: 1.2-6
+Date: 2022-10-07
 Title: Spatial Regression Analysis
 Encoding: UTF-8
 Authors@R: c(person("Roger", "Bivand", role = c("cre", "aut"), email = "Roger.Bivand@nhh.no", comment=c(ORCID="0000-0003-2392-6140")),
@@ -24,10 +24,14 @@ Authors@R: c(person("Roger", "Bivand", role = c("cre", "aut"), email = "Roger.Bi
              person("Tobias", "Rüttenauer", role = "ctb"),
              person(given = "Mauricio", family = "Sarrias", role = c("ctb"), email = "mauricio.sarrias@ucn.cl"),
              person(given = "JuanTomas", family = "Sayago", role = c("ctb"), email = "juantomas.sayago@gmail.com"),
-             person("Michael", "Tiefelsdorf", role = "ctb"))
+             person("Michael", "Tiefelsdorf", role = "ctb"),
+             person("Bendix", "Carstensen", role = "ctb"),
+             person("Gregory", "Warnes", role = "ctb"),
+             person("Soren", "Hojsgaard", role = "ctb"),
+             person("Randal", "Johnson", role = "ctb"))
 Depends: R (>= 3.3.0), spData, Matrix, sf
 Imports: spdep, expm, coda, methods, MASS, boot, splines, LearnBayes,
-        nlme, gmodels
+        nlme
 Suggests: parallel, RSpectra, tmap, foreign, spam, knitr, lmtest,
         sandwich, rmarkdown, igraph
 Description: A collection of all the estimation functions for spatial cross-sectional models (on lattice/areal data using spatial weights matrices) contained up to now in 'spdep', 'sphet' and 'spse'. These model fitting functions include maximum likelihood methods for cross-sectional models proposed by 'Cliff' and 'Ord' (1973, ISBN:0850860369) and (1981, ISBN:0850860814), fitting methods initially described by 'Ord' (1975) <doi:10.1080/01621459.1975.10480272>. The models are further described by 'Anselin' (1988) <doi:10.1007/978-94-015-7799-1>. Spatial two stage least squares and spatial general method of moment models initially proposed by 'Kelejian' and 'Prucha' (1998) <doi:10.1023/A:1007707430416> and (1999) <doi:10.1111/1468-2354.00027> are provided. Impact methods and MCMC fitting methods proposed by 'LeSage' and 'Pace' (2009) <doi:10.1201/9781420064254> are implemented for the family of cross-sectional spatial regression models. Methods for fitting the log determinant term in maximum likelihood and MCMC fitting are compared by 'Bivand et al.' (2013) <doi:10.1111/gean.12008>, and model fitting methods by 'Bivand' and 'Piras' (2015) <doi:10.18637/jss.v063.i18>; both of these articles include extensive lists of references. 'spatialreg' >= 1.1-* corresponded to 'spdep' >= 1.1-1, in which the model fitting functions were deprecated and passed through to 'spatialreg', but masked those in 'spatialreg'. From versions 1.2-*, the functions have been made defunct in 'spdep'.
@@ -38,7 +42,7 @@ BugReports: https://github.com/r-spatial/spatialreg/issues/
 VignetteBuilder: knitr
 NeedsCompilation: yes
 RoxygenNote: 6.1.1
-Packaged: 2022-08-16 14:32:34 UTC; rsb
+Packaged: 2022-10-07 15:07:33 UTC; rsb
 Author: Roger Bivand [cre, aut] (<https://orcid.org/0000-0003-2392-6140>),
   Gianfranco Piras [aut],
   Luc Anselin [ctb],
@@ -60,7 +64,11 @@ Author: Roger Bivand [cre, aut] (<https://orcid.org/0000-0003-2392-6140>),
   Tobias Rüttenauer [ctb],
   Mauricio Sarrias [ctb],
   JuanTomas Sayago [ctb],
-  Michael Tiefelsdorf [ctb]
+  Michael Tiefelsdorf [ctb],
+  Bendix Carstensen [ctb],
+  Gregory Warnes [ctb],
+  Soren Hojsgaard [ctb],
+  Randal Johnson [ctb]
 Maintainer: Roger Bivand <Roger.Bivand@nhh.no>
 Repository: CRAN
-Date/Publication: 2022-08-16 18:10:02 UTC
+Date/Publication: 2022-10-07 16:10:02 UTC

@@ -1,4 +1,10 @@
-# Version 1.2-5 (development)
+# Version 1.2-6 (development)
+
+* make local copy of `gmodels::estimable()` for lm objects only, add authors to package contributors
+
+* -Wstrict-prototypes fixes
+
+# Version 1.2-5 (2022-08-16)
 
 * updating coercion for **Matrix** 1.4-2
 
