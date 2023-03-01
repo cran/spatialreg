@@ -1,4 +1,8 @@
-# Version 1.2-6 (development)
+# Version 1.2-8 (development)
+
+* Attending to SLX/Durbin/non-W-style weights: #7, #36, #26, #35, #30 #24, #23, partly based on #13
+
+# Version 1.2-6 (2022-10-07)
 
 * make local copy of `gmodels::estimable()` for lm objects only, add authors to package contributors
 

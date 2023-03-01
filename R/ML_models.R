@@ -53,10 +53,11 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
         if (missing(etype))etype <- "error"
         if (etype == "Durbin") etype <- "emixed"
         if (missing(Durbin)) Durbin <- ifelse(etype == "error", FALSE, TRUE)
-        if (listw$style != "W" && is.formula(Durbin)) {
-            Durbin <- TRUE
-            warning("formula Durbin requires row-standardised weights; set TRUE")
-        }
+# FIXME does this hold?
+#        if (listw$style != "W" && is.formula(Durbin)) {
+#            Durbin <- TRUE
+#            warning("formula Durbin requires row-standardised weights; set TRUE")
+#        }
         if (is.logical(Durbin) && isTRUE(Durbin)) etype <- "emixed"
         if (is.formula(Durbin)) etype <- "emixed"
         if (is.logical(Durbin) && !isTRUE(Durbin)) etype <- "error"
@@ -95,6 +96,8 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
             fdHess <- NULL
         }
         stopifnot(is.logical(con$fdHess))
+        dvars <- c(NCOL(x), 0L)
+
 	if (is.formula(Durbin) || isTRUE(Durbin)) {
                 prefix <- "lag"
                 if (isTRUE(Durbin)) {
@@ -261,15 +264,15 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
         emixedImps <- NULL
 	if (etype == "emixed") {
           if (isTRUE(Durbin)) {
-            odd <- (m%/%2) > 0
+            odd <- (m%%2) > 0
             if (odd) {
                 m2 <- (m-1)/2
             } else {
                 m2 <- m/2
             }
-            if (K == 1 && odd) {
-                warning("model configuration issue: no total impacts")
-            } else {
+#            if (K == 1 && odd) {
+#                warning("model configuration issue: no total impacts")
+#            } else {
                 cm <- matrix(0, ncol=m, nrow=m2)
                 if (K == 2) {
                     if (odd) {
@@ -292,29 +295,36 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                     indirImps <- sum_lm_target$coefficients[(m2+1):m, 1:2, drop=FALSE]
                     rownames(indirImps) <- rownames(cm)
                 }
-            }
+#            }
             totImps <- as.matrix(.estimable(lm.target, cm)[, 1:2, drop=FALSE])
           } else if (is.formula(Durbin)) {
 #FIXME
+            LI <- ifelse(listw$style != "W" 
+                         && attr(terms(Durbin), "intercept") == 1, 1, 0)
               m <- sum(dvars)
-              m2 <- dvars[2]
+              KIL <- max((LI - (K - 1)), 0)
+              m2 <- dvars[2] - KIL
               cm <- matrix(0, ncol=m, nrow=m2)
               for (i in 1:m2) {
-                  cm[i, c(inds[i], i+dvars[1])] <- 1
+                  cm[i, c(inds[i], i+dvars[1] + KIL)] <- 1
               }
-              rownames(cm) <- wxn
-              dirImps <- sum_lm_target$coefficients[2:dvars[1], 1:2,
+              if (LI == 1 && K == 1) { 
+                rownames(cm) <- wxn[!grepl("Intercept", wxn)]
+              } else {
+                rownames(cm) <- wxn
+              }
+              dirImps <- sum_lm_target$coefficients[K:dvars[1], 1:2,
                 drop=FALSE]
               rownames(dirImps) <- xn
-              indirImps <- sum_lm_target$coefficients[(dvars[1]+1):m, 1:2,
+              indirImps <- sum_lm_target$coefficients[(dvars[1] + 1 + KIL):m, 1:2,
                 drop=FALSE]
               if (!is.null(zero_fill)) {
                 if (length(zero_fill) > 0L) {
                  lres <- vector(mode="list", length=2L)
                  for (j in 1:2) {
-                  jindirImps <- rep(as.numeric(NA), (dvars[1]-1))
+                  jindirImps <- rep(as.numeric(NA), (dvars[1] + (1-K)))
                   for (i in seq(along=inds)) {
-                    jindirImps[(inds[i]-1)] <- indirImps[i, j]
+                    jindirImps[(inds[i]+(1-K))] <- indirImps[i, j]
                   }
                   lres[[j]] <- jindirImps
                  }
@@ -330,7 +340,7 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                  for (j in 1:2) {
                   jtotImps <- dirImps[, j]
                   for (i in seq(along=inds)) {
-                    jtotImps[(inds[i]-1)] <- totImps[i, j]
+                    jtotImps[(inds[i]+(1-K))] <- totImps[i, j]
                   }
                   lres[[j]] <- jtotImps
                  }
@@ -483,8 +493,8 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                 timings=do.call("rbind", timings)[, c(1, 3)], 
                 f_calls=get("f_calls", envir=env),
                 hf_calls=get("hf_calls", envir=env), intern_classic=iC,
-                pWinternal=pWinternal, weights=weights, emixedImps=emixedImps),
-                class=c("Sarlm"))
+                pWinternal=pWinternal, weights=weights, emixedImps=emixedImps,
+                dvars=dvars), class=c("Sarlm"))
         rm(env)
         GC <- gc()
 	if (zero.policy) {
@@ -495,6 +505,7 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
 	}
 	if (!is.null(na.act))
 		ret$na.action <- na.act
+        if (is.formula(Durbin)) attr(ret, "Durbin") <- deparse(Durbin)
 	ret
 }
 
@@ -867,6 +878,7 @@ lagsarlm <- function(formula, data = list(), listw,
 	}
 	if (!is.null(na.act))
 		ret$na.action <- na.act
+        if (is.formula(Durbin)) attr(ret, "Durbin") <- deparse(Durbin)
 	ret
 }
 
@@ -1300,6 +1312,7 @@ sacsarlm <- function(formula, data = list(), listw, listw2=NULL, na.action,
             ret$llprof <- list(grd=llprof, ll=ll_prof, xseq=llrho,
                 yseq=lllambda)
         }
+        if (is.formula(Durbin)) attr(ret, "Durbin") <- deparse(Durbin)
 	if (!is.null(na.act))
 		ret$na.action <- na.act
 	ret

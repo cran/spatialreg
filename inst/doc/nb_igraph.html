@@ -108,8 +108,8 @@ pre code {
   border-radius: 4px;
 }
 
-.tabset-dropdown > .nav-tabs > li.active:before {
-  content: "";
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
   font-family: 'Glyphicons Halflings';
   display: inline-block;
   padding: 10px;
@@ -117,16 +117,9 @@ pre code {
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-  content: "";
-  border: none;
-}
-
-.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-  content: "";
+  content: "\e258";
   font-family: 'Glyphicons Halflings';
-  display: inline-block;
-  padding: 10px;
-  border-right: 1px solid #ddd;
+  border: none;
 }
 
 .tabset-dropdown > .nav-tabs > li.active {
@@ -280,9 +273,9 @@ if (dothis) {
   sf_extSoftVersion()
 }</code></pre>
 <pre><code>##           GEOS           GDAL         proj.4 GDAL_with_GEOS     USE_PROJ_H 
-##       &quot;3.11.0&quot;        &quot;3.5.2&quot;        &quot;9.0.1&quot;         &quot;true&quot;         &quot;true&quot; 
+##       &quot;3.11.1&quot;        &quot;3.6.2&quot;        &quot;9.1.1&quot;         &quot;true&quot;         &quot;true&quot; 
 ##           PROJ 
-##        &quot;9.0.1&quot;</code></pre>
+##        &quot;9.1.1&quot;</code></pre>
 <pre class="r"><code>library(sf)
 columbus &lt;- st_read(system.file(&quot;shapes/columbus.shp&quot;, package=&quot;spData&quot;)[1])</code></pre>
 <pre><code>## Reading layer `columbus&#39; from data source 
@@ -359,6 +352,8 @@ all(B == t(B))</code></pre>
 <pre><code>##  [1] &quot;1&quot;  &quot;2&quot;  &quot;3&quot;  &quot;4&quot;  &quot;5&quot;  &quot;6&quot;  &quot;7&quot;  &quot;8&quot;  &quot;9&quot;  &quot;10&quot;</code></pre>
 <p>Let us now try to retreive the list of neighbours from the symmetric sparse matrix. At present, we have to coerce from one <strong>Matrix</strong> internal representation to another in order to get to the <code>&quot;dgCMatrix&quot;</code> format used inside <code>mat2listw</code>, so we coerce to <code>&quot;dgTMatrix&quot;</code> from <code>&quot;dsTMatrix&quot;</code>. The style is not retreived automatically, but is set to <code>&quot;M&quot;</code> to indicate conversion from a matrix. The neighbour links are retreived correctly, as are the IDs:</p>
 <pre class="r"><code>nb_B1 &lt;- spdep::mat2listw(as(as(B, &quot;TsparseMatrix&quot;), &quot;CsparseMatrix&quot;))</code></pre>
+<pre><code>## Warning in spdep::mat2listw(as(as(B, &quot;TsparseMatrix&quot;), &quot;CsparseMatrix&quot;)): style
+## is M (missing); style should be set to a valid value</code></pre>
 <pre><code>## Warning in sn2listw(df): 21 is not an origin</code></pre>
 <pre class="r"><code>nb_B1$style</code></pre>
 <pre><code>## [1] &quot;M&quot;</code></pre>
@@ -451,8 +446,7 @@ isd[21,21]</code></pre>
 <pre><code>## [1] Inf</code></pre>
 <pre class="r"><code>Ws &lt;- as(isd %*% dW %*% isd, &quot;symmetricMatrix&quot;)
 rowSums(Ws)[21]</code></pre>
-<pre><code>## 21 
-##  0</code></pre>
+<pre><code>## [1] 0</code></pre>
 <pre class="r"><code>class(Ws)</code></pre>
 <pre><code>## [1] &quot;dsCMatrix&quot;
 ## attr(,&quot;package&quot;)
