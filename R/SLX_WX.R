@@ -15,8 +15,9 @@ lmSLX <- function(formula, data = list(), listw, na.action, weights=NULL, Durbin
         mf[[1]] <- as.name("model.frame")
         mf <- eval(mf, parent.frame())
         mt <- attr(mf, "terms")
-        if (attr(mt, "intercept") == 0L) warning("missing intercept")
-
+        if (attr(mt, "intercept") == 1 && !any(attr(mt, "factors") == 1)) {
+            stop("intercept-only model, Durbin invalid")
+        }
 	na.act <- attr(mf, "na.action")
 	if (!inherits(listw, "listw")) stop("No neighbourhood list")
 	if (listw$style == "M") warning("missing spatial weights style")
@@ -108,18 +109,15 @@ lmSLX <- function(formula, data = list(), listw, na.action, weights=NULL, Durbin
             names(coefficients(lm.model))[1]) == 1L), 2, 1)
         if (isTRUE(Durbin)) {
           m <- length(coefficients(lm.model))
-          odd <- (m%/%2) > 0
-          if (odd && K == 2) { #TR: without intercept and odd use m/2
+          m.1 <- m > 1
+          if (m.1 && K == 2) { #TR: without intercept and m.1 use m/2
               m2 <- (m-1)/2
           } else {
               m2 <- m/2
           }
-#          if (3 == 4) { #TR: omit condition "(K == 1 && odd)" for now. why issue if no intercept, and odd num coefs?
-#            warning("model configuration issue: no total impacts")
-#          } else {
             cm <- matrix(0, ncol=m, nrow=m2)
             if (K == 2) {
-                if (odd) {
+                if (m.1) {
                     rownames(cm) <- nclt[2:(m2+1)]
                 } else {
                     rownames(cm) <- nclt[1:m2]
@@ -139,9 +137,8 @@ lmSLX <- function(formula, data = list(), listw, na.action, weights=NULL, Durbin
                 indirImps <- sum_lm_model$coefficients[(m2+1):m, 1:2, drop=FALSE]
                 rownames(indirImps) <- rownames(cm)
             }
-            totImps <- as.matrix(.estimable(lm.model, cm)[, 1:2, drop=FALSE])
-            
-#          } 
+            lc <- summary(multcomp::glht(lm.model, linfct=cm))
+            totImps <- cbind("Estimate"=lc$test$coefficients, "Std. Error"=lc$test$sigma)
       } else if (is.formula(Durbin)) {
 #FIXME
             LI <- ifelse(listw$style != "W" 
@@ -177,7 +174,9 @@ lmSLX <- function(formula, data = list(), listw, na.action, weights=NULL, Durbin
                  }
                }
                rownames(indirImps) <- xn
-               totImps <- as.matrix(.estimable(lm.model, cm)[, 1:2, drop=FALSE])
+               lc <- summary(multcomp::glht(lm.model, linfct=cm))
+               totImps <- cbind("Estimate"=lc$test$coefficients,
+                     "Std. Error"=lc$test$sigma)
                  if (!is.null(zero_fill)) {
                    if (length(zero_fill) > 0L) {
                      lres <- vector(mode="list", length=2L)
@@ -218,20 +217,47 @@ predict.SlX <- function(object, newdata, listw, zero.policy=NULL, ...) {
     vars <- rownames(attr(object, "mixedImps")$dirImps)
     f <- formula(paste("~", paste(vars, collapse=" + ")))
     mf <- lm(f, newdata, method="model.frame")
+    if (dim(mf)[1] != nrow(newdata))
+      stop("missing values in newdata")
     mt <- attr(mf, "terms")
     x <- model.matrix(mt, mf)
-    if (any(is.na(x))) stop("NAs in independent variable")
-    n <- nrow(x)
-    if (n != length(listw$neighbours))
-        stop("listw and data of different lengths")
-    xx <- x
-    if (!is.null(attr(object, "Durbin"))) {
+    if (!is.null(attr(object, "Durbin")) && is.formula(formula(attr(object, "Durbin")))) {
         ff <- update(f, formula(paste(attr(object, "Durbin"), collapse=" ")))
         mf <- lm(ff, newdata, method="model.frame")
+        if (dim(mf)[1] != nrow(newdata))
+          stop("missing values in newdata")
         mt <- attr(mf, "terms")
-        xx <- model.matrix(mt, mf)
+        xd <- model.matrix(mt, mf)
+    } else {
+        ff <- f
+        xd <- x
     }
+    if (any(is.na(xd))) stop("NAs in independent variable")
+    n <- nrow(x)
+    if (any(! row.names(newdata) %in% attr(listw, "region.id")))
+        stop("mismatch between newdata and spatial weights. newdata should have region.id as row.names")
+    if (n == length(listw$neighbours)) { # in-sample
+        xx <- xd
+    } else { # out-of-sample
+        if (length(listw$neighbours) == (n + nrow(object$model))) {
+            xo <- xd
+            mf <- lm(ff, object$model, method="model.frame")
+            mt <- attr(mf, "terms")
+            xs <- model.matrix(mt, mf)
+            ids <- attr(listw, "region.id")
+            xso <- rbind(xs, xo)
+            xx <- xso[match(ids, row.names(xso)),]
+            if (any(!(row.names(xx) == ids))) stop("row name mismatch")
+        } else {
+            stop("listw and model and new data of different lengths")
+        }
+    }
+
+# https://github.com/r-spatial/spatialreg/issues/37
     WX <- create_WX(xx, listw, zero.policy=zero.policy, prefix="lag")
+    if (n < length(listw$neighbours)) {
+        WX <- WX[match(rownames(xo), rownames(WX)),]
+    }
     x <- cbind(x, WX)
     res <- as.vector(x %*% coef(object))
     names(res) <- row.names(newdata)
@@ -243,11 +269,11 @@ impacts.SlX <- function(obj, ...) {
     stopifnot(!is.null(attr(obj, "mixedImps")))
     n <- nrow(obj$model)
     k <- obj$qr$rank
-    impactsWX(attr(obj, "mixedImps"), n, k, type="SlX", method="estimable")
+    impactsWX(attr(obj, "mixedImps"), n, k, type="SlX", method="glht")
 }
 
 
-impactsWX <- function(obj, n, k, type="SlX", method="estimable") {
+impactsWX <- function(obj, n, k, type="SlX", method="glht") {
     imps <- lapply(obj, function(x) x[, 1])
     names(imps) <- c("direct", "indirect", "total")
     attr(imps, "bnames") <- rownames(obj[[1]])
@@ -364,104 +390,8 @@ create_WX <- function(x, listw, zero.policy=NULL, prefix="") {
 	}
         if (!is.null(wxI)) WX <- cbind(wxI, WX)
         colnames(WX) <- Wvars
+        rownames(WX) <- rownames(x)
         WX
 }
 
-## $Id: gmodels estimable.R 2060 2015-07-19 03:22:30Z warnes $
-.estimable <- function (obj, cm, beta0, conf.int=NULL,
-                               show.beta0, joint.test=FALSE, ...)
-{
-  if (is.matrix(cm) || is.data.frame(cm)) {
-      cm <- t(apply(cm, 1, .to.est, obj=obj))
-  } else if(is.list(cm)) {
-      cm <- matrix(.to.est(obj, cm), nrow=1)
-  } else if(is.vector(cm)) {
-      cm <- matrix(.to.est(obj, cm), nrow=1)
-  } else {
-      stop("`cm' argument must be of type vector, list, or matrix.")
-  }
-  if(missing(show.beta0)) {
-      if(!missing(beta0))
-        show.beta0=TRUE
-      else
-        show.beta0=FALSE
-  }
 
-  if (missing(beta0)) {
-      beta0 = rep(0, ifelse(is.null(nrow(cm)), 1, nrow(cm)))
-  }
-
-  stat.name <- "t.stat"
-  cf <- summary.lm(obj)$coefficients
-  vcv <- summary.lm(obj)$cov.unscaled * summary.lm(obj)$sigma^2
-  df <- obj$df.residual
-  if (is.null(cm))
-    cm <- diag(dim(cf)[1])
-  if (!dim(cm)[2]==dim(cf)[1])
-    stop(paste("\n Dimension of ", deparse(substitute(cm)),
-                   ": ", paste(dim(cm), collapse="x"),
-                   ", not compatible with no of parameters in ",
-                   deparse(substitute(obj)), ": ", dim(cf)[1], sep=""))
-    ct <- cm %*% cf[, 1]
-    ct.diff <- cm %*% cf[, 1] - beta0
-
-    vc <- sqrt(diag(cm %*% vcv %*% t(cm)))
-    if (is.null(rownames(cm)))
-      rn <- paste("(", apply(cm, 1, paste, collapse=" "),
-                    ")", sep="")
-    else rn <- rownames(cm)
-    retval <- cbind(hyp=beta0, est=ct, stderr=vc)
-          dimnames(retval) <- list(rn, c("beta0", "Estimate", "Std. Error"))
-    rownames(retval) <- make.unique(rownames(retval))
-    retval <- as.data.frame(retval)
-    if(!show.beta0) retval$beta0 <- NULL
-
-    class(retval) <- c("estimable", class(retval))
-
-    return(retval)
-}
-
-# gmodels to.est.R
-# return a vector for cm in estimable()
-# Randy Johnson
-# Laboratory of Genomic Diversity at NCI-Frederick
-
-.to.est <- function(obj, params)
-{
-  eff.obj <- coef(obj)
-
-  if (is.null(obj))
-    stop("Error obtaining model coefficients")
-
-  est <- rep(0, length(eff.obj))
-  names(est) <- names(eff.obj)
-
-  if(!missing(params))
-    {
-      if(is.null(names(params)))
-        if(length(params)==length(est))
-          names(params) <- names(est)
-        else
-          stop("'param' has no names and does not match number of coefficients of model. Unable to construct coefficient vector")
-      else
-        {
-          matches <- names(params) %in% names(est)
-          if(!(all(matches)))
-             stop(
-                  '\n\t',
-                  'Invalid parameter name(s): ',
-                  paste(names(params)[!matches], collapse=', '),
-                  '\n\t',
-                  'Valid names are: ',
-                  paste(names(est), collapse=', ')
-                  )
-        }
-
-      if(is.list(params))
-        est[names(params)] <- unlist(params)
-      else
-        est[names(params)] <- params
-    }
-
-  return(est)
-}

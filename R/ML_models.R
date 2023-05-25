@@ -13,7 +13,7 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
             super=NULL, spamPivot="MMD", in_coef=0.1, type="MC",
             correct=TRUE, trunc=TRUE, SE_method="LU", nrho=200,
             interpn=2000, small_asy=TRUE, small=1500, SElndet=NULL,
-            LU_order=FALSE, pre_eig=NULL)
+            LU_order=FALSE, pre_eig=NULL, glht=FALSE)
         nmsC <- names(con)
         con[(namc <- names(control))] <- control
         if (length(noNms <- namc[!namc %in% nmsC])) 
@@ -29,6 +29,7 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
 #        stopifnot(is.logical(con$super))
         stopifnot(is.logical(con$compiled_sse))
         stopifnot(is.character(con$spamPivot))
+        stopifnot(is.logical(con$glht))
         if (!inherits(formula, "formula")) formula <- as.formula(formula)
 #	mt <- terms(formula, data = data)
 #	mf <- lm(formula, data, na.action=na.action, method="model.frame")
@@ -40,6 +41,12 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
         mf[[1]] <- as.name("model.frame")
         mf <- eval(mf, parent.frame())
         mt <- attr(mf, "terms")
+        if (attr(mt, "intercept") == 1 && !any(attr(mt, "factors") == 1) &&
+            (is.formula(Durbin) || isTRUE(Durbin))) {
+            warning("intercept-only model, Durbin invalid and set FALSE")
+            Durbin <- FALSE
+        }
+
 #
 	na.act <- attr(mf, "na.action")
 	if (!is.null(na.act)) {
@@ -168,7 +175,8 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
         sw <- sqrt(weights)
 #
         LL_null_lm <- NULL
-	if ("(Intercept)" %in% colnames(x)) LL_null_lm <- logLik(lm(y ~ 1))
+	if ("(Intercept)" %in% colnames(x)) LL_null_lm <- logLik(lm(y ~ 1,
+            weights=weights))
 	m <- NCOL(x)
 	xcolnames <- colnames(x)
 	K <- ifelse(xcolnames[1] == "(Intercept)", 2, 1)
@@ -264,18 +272,15 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
         emixedImps <- NULL
 	if (etype == "emixed") {
           if (isTRUE(Durbin)) {
-            odd <- (m%%2) > 0
-            if (odd) {
+            m.1 <- m > 1
+            if (m.1 && K == 2) {
                 m2 <- (m-1)/2
             } else {
                 m2 <- m/2
             }
-#            if (K == 1 && odd) {
-#                warning("model configuration issue: no total impacts")
-#            } else {
                 cm <- matrix(0, ncol=m, nrow=m2)
                 if (K == 2) {
-                    if (odd) {
+                    if (m.1) {
                         rownames(cm) <- xxcolnames[2:(m2+1)]
                     } else {
                         rownames(cm) <- xxcolnames[1:m2]
@@ -295,8 +300,8 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                     indirImps <- sum_lm_target$coefficients[(m2+1):m, 1:2, drop=FALSE]
                     rownames(indirImps) <- rownames(cm)
                 }
-#            }
-            totImps <- as.matrix(.estimable(lm.target, cm)[, 1:2, drop=FALSE])
+            lc <- summary(multcomp::glht(lm.target, linfct=cm))
+            totImps <- cbind("Estimate"=lc$test$coefficients, "Std. Error"=lc$test$sigma)
           } else if (is.formula(Durbin)) {
 #FIXME
             LI <- ifelse(listw$style != "W" 
@@ -332,8 +337,8 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                 }
               }
               rownames(indirImps) <- xn
-              totImps <- as.matrix(.estimable(lm.target, cm)[, 1:2,
-                drop=FALSE])
+              lc <- summary(multcomp::glht(lm.target, linfct=cm))
+              totImps <- cbind("Estimate"=lc$test$coefficients, "Std. Error"=lc$test$sigma)
               if (!is.null(zero_fill)) {
                 if (length(zero_fill) > 0L) {
                  lres <- vector(mode="list", length=2L)

@@ -1,4 +1,16 @@
-# Version 1.2-8 (development)
+# Version 1.2-9 (development)
+
+* raised #39, no support for weights in SEM/SDEM/SLX #39
+
+* address #37; #38 remains (no formula Durbin support for prediction using any Sarlm object)
+
+* address #19 by not reporting `AIC` where case weights are used in `spautolm` or `errorsarlm`
+
+* address bug in `predict()` for new data, SDEM. Others in #37, #38 need work.
+
+* Further added checking for SLX/SDEM impacts and edge/corner cases; starting transition to use **multcomp** in place og **gmodels**
+
+# Version 1.2-8 (2023-03-01)
 
 * Attending to SLX/Durbin/non-W-style weights: #7, #36, #26, #35, #30 #24, #23, partly based on #13
 
