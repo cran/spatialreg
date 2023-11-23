@@ -1,7 +1,7 @@
 ## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 
-## ---- echo=FALSE,eval=TRUE,warning=FALSE, message=FALSE-----------------------
+## ----echo=FALSE,eval=TRUE,warning=FALSE, message=FALSE------------------------
 library(spdep)
 
 ## ----echo=TRUE,eval=TRUE------------------------------------------------------
@@ -14,7 +14,7 @@ row.names(nc) <- as.character(nc$FIPSNO)
 nc$ft.SID74 <- sqrt(1000)*(sqrt(nc$SID74/nc$BIR74) + sqrt((nc$SID74+1)/nc$BIR74))
 nc$both <- factor(paste(nc$L_id, nc$M_id, sep=":"))
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 is_tmap <- FALSE
 if (require(tmap, quietly=TRUE)) is_tmap <- TRUE
 is_tmap
@@ -31,7 +31,11 @@ n <- nc$BIR74
 el1 <- min(dij)/dij
 el2 <- sqrt(n[sids.nhbr$to]/n[sids.nhbr$from])
 sids.nhbr$weights <- el1*el2
-sids.nhbr.listw <- sn2listw(sids.nhbr)
+if (packageVersion("spdep") >= "1.3.1") {
+  sids.nhbr.listw <- sn2listw(sids.nhbr, style="B", zero.policy=TRUE)
+} else {
+  sids.nhbr.listw <- sn2listw(sids.nhbr)
+}
 
 ## ----echo=TRUE----------------------------------------------------------------
 nc$ft.NWBIR74 <- sqrt(1000)*(sqrt(nc$NWBIR74/nc$BIR74) + sqrt((nc$NWBIR74+1)/nc$BIR74))
@@ -60,7 +64,7 @@ summary(ecarIIaw)
 ecarIVaw <- spautolm(ft.SID74 ~ ft.NWBIR74, data=nc2, listw=sids.nhbr.listw.4, weights=BIR74, family="CAR")
 summary(ecarIVaw)
 
-## ---- eval=is_tmap, echo=TRUE-------------------------------------------------
+## ----eval=is_tmap, echo=TRUE--------------------------------------------------
 nc2$fitIV <- fitted.values(ecarIVaw)
 sf_use_s2(FALSE)
 tm_shape(nc2) + tm_fill("fitIV")
