@@ -1565,9 +1565,9 @@ if (dothis) {
   sf_extSoftVersion()
 }</code></pre>
 <pre><code>##           GEOS           GDAL         proj.4 GDAL_with_GEOS     USE_PROJ_H 
-##       &quot;3.12.1&quot;        &quot;3.8.0&quot;        &quot;9.3.0&quot;         &quot;true&quot;         &quot;true&quot; 
+##       &quot;3.12.1&quot;        &quot;3.8.3&quot;        &quot;9.3.1&quot;         &quot;true&quot;         &quot;true&quot; 
 ##           PROJ 
-##        &quot;9.3.0&quot;</code></pre>
+##        &quot;9.3.1&quot;</code></pre>
 <pre class="r"><code>library(sf)
 columbus &lt;- st_read(system.file(&quot;shapes/columbus.shp&quot;, package=&quot;spData&quot;)[1])</code></pre>
 <pre><code>## Reading layer `columbus&#39; from data source 
@@ -1882,8 +1882,13 @@ of a symmetric matrix is <code>&quot;undirected&quot;</code> by definition:</p>
 <pre><code>## The following object is masked from &#39;package:base&#39;:
 ## 
 ##     union</code></pre>
-<pre class="r"><code>g1 &lt;- graph.adjacency(B, mode=&quot;undirected&quot;)
-class(g1)</code></pre>
+<pre class="r"><code>g1 &lt;- graph.adjacency(B, mode=&quot;undirected&quot;)</code></pre>
+<pre><code>## Warning: `graph.adjacency()` was deprecated in igraph 2.0.0.
+## ℹ Please use `graph_from_adjacency_matrix()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
+<pre class="r"><code>class(g1)</code></pre>
 <pre><code>## [1] &quot;igraph&quot;</code></pre>
 <pre class="r"><code>object.size(g1)</code></pre>
 <pre><code>## 6544 bytes</code></pre>
@@ -1898,15 +1903,10 @@ matrices to fewer graph types, and back to fewer matrix types:</p>
 ow &lt;- options(&quot;warn&quot;)$warn
 options(&quot;warn&quot;=2L)
 B1 &lt;- try(get.adjacency(g1), silent=TRUE)
-if (!inherits(B1, &quot;try-error&quot;)) print(class(B1))</code></pre>
-<pre><code>## [1] &quot;dgCMatrix&quot;
-## attr(,&quot;package&quot;)
-## [1] &quot;Matrix&quot;</code></pre>
-<pre class="r"><code>if (!inherits(B1, &quot;try-error&quot;)) print(object.size(B1))</code></pre>
-<pre><code>## 10824 bytes</code></pre>
-<pre class="r"><code>if (!inherits(B1, &quot;try-error&quot;)) print(all.equal(B, as(B1, &quot;CsparseMatrix&quot;)))</code></pre>
-<pre><code>## [1] TRUE</code></pre>
-<pre class="r"><code>options(&quot;warn&quot;=ow)</code></pre>
+if (!inherits(B1, &quot;try-error&quot;)) print(class(B1))
+if (!inherits(B1, &quot;try-error&quot;)) print(object.size(B1))
+if (!inherits(B1, &quot;try-error&quot;)) print(all.equal(B, as(B1, &quot;CsparseMatrix&quot;)))
+options(&quot;warn&quot;=ow)</code></pre>
 </div>
 <div id="graph-components-in-spdep" class="section level3">
 <h3>Graph components in <strong>spdep</strong></h3>
@@ -1925,8 +1925,13 @@ table(res$comp.id)</code></pre>
 <h3>Graph components in <strong>igraph</strong></h3>
 <p>The same result can be obtained using the <code>clusters</code>
 function in <strong>igraph</strong>:</p>
-<pre class="r"><code>c1 &lt;- clusters(g1)
-c1$no == res$nc</code></pre>
+<pre class="r"><code>c1 &lt;- clusters(g1)</code></pre>
+<pre><code>## Warning: `clusters()` was deprecated in igraph 2.0.0.
+## ℹ Please use `components()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
+<pre class="r"><code>c1$no == res$nc</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>all.equal(c1$membership, res$comp.id)</code></pre>
 <pre><code>## [1] &quot;names for target but not for current&quot;</code></pre>
@@ -1951,12 +1956,22 @@ above. The diameter measure is then the diameter of the largest
 component subgraph. Note that this generates an <code>n</code> x
 <code>n</code> matrix:</p>
 <pre class="r"><code>is.connected(g1)</code></pre>
+<pre><code>## Warning: `is.connected()` was deprecated in igraph 2.0.0.
+## ℹ Please use `is_connected()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
 <pre><code>## [1] FALSE</code></pre>
 <pre class="r"><code>dg1 &lt;- diameter(g1)
 dg1</code></pre>
 <pre><code>## [1] 7</code></pre>
-<pre class="r"><code>sp_mat &lt;- shortest.paths(g1)
-str(sp_mat)</code></pre>
+<pre class="r"><code>sp_mat &lt;- shortest.paths(g1)</code></pre>
+<pre><code>## Warning: `shortest.paths()` was deprecated in igraph 2.0.0.
+## ℹ Please use `distances()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.</code></pre>
+<pre class="r"><code>str(sp_mat)</code></pre>
 <pre><code>##  num [1:49, 1:49] 0 1 1 2 2 3 4 3 3 4 ...
 ##  - attr(*, &quot;dimnames&quot;)=List of 2
 ##   ..$ : chr [1:49] &quot;1&quot; &quot;2&quot; &quot;3&quot; &quot;4&quot; ...
