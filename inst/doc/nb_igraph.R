@@ -45,7 +45,8 @@ str(B)
 rownames(B)[1:10]
 
 ## ----echo=dothis, eval=dothis-------------------------------------------------
-nb_B1 <- spdep::mat2listw(as(as(B, "TsparseMatrix"), "CsparseMatrix"))
+nb_B1 <- spdep::mat2listw(as(as(B, "TsparseMatrix"), "CsparseMatrix"),
+    style="B", zero.policy=TRUE)
 nb_B1$style
 all.equal(nb_B1$neighbours, col2, check.attributes=FALSE)
 all.equal(attr(nb_B1$neighbours, "region.id"), attr(nb_B$neighbours, "region.id"))
@@ -65,7 +66,7 @@ c(determinant(I - rho * B, logarithm=TRUE)$modulus)
 ## ----echo=dothis, eval=dothis-------------------------------------------------
 nW <- -B
 nChol <- Cholesky(nW, Imult=8)
-n * log(rho) + (2 * c(determinant(update(nChol, nW, 1/rho))$modulus))
+n * log(rho) + (2 * c(determinant(update(nChol, nW, 1/rho), sqrt=TRUE)$modulus))
 
 ## ----echo=dothis, eval=dothis-------------------------------------------------
 nb_W <- spdep::nb2listw(col2, style="W", zero.policy=TRUE)
@@ -121,7 +122,7 @@ if (!require("RSpectra", quietly=TRUE)) dothis <- FALSE
 class(B)
 object.size(B)
 if (!require("igraph", quietly=FALSE)) dothis <- FALSE
-g1 <- graph.adjacency(B, mode="undirected")
+g1 <- graph_from_adjacency_matrix(B, mode="undirected")
 class(g1)
 object.size(g1)
 
@@ -129,7 +130,7 @@ object.size(g1)
 # Matrix 1.4-2 vulnerability work-around
 ow <- options("warn")$warn
 options("warn"=2L)
-B1 <- try(get.adjacency(g1), silent=TRUE)
+B1 <- try(as_adjacency_matrix(g1), silent=TRUE)
 if (!inherits(B1, "try-error")) print(class(B1))
 if (!inherits(B1, "try-error")) print(object.size(B1))
 if (!inherits(B1, "try-error")) print(all.equal(B, as(B1, "CsparseMatrix")))
@@ -140,22 +141,22 @@ res <- spdep::n.comp.nb(col2)
 table(res$comp.id)
 
 ## ----echo=dothis, eval=dothis-------------------------------------------------
-c1 <- clusters(g1)
+c1 <- components(g1)
 c1$no == res$nc
 all.equal(c1$membership, res$comp.id)
 all.equal(c1$csize, c(table(res$comp.id)), check.attributes=FALSE)
 
 ## ----echo=dothis, eval=dothis-------------------------------------------------
 W <- as(spdep::nb2listw(col2, style="W", zero.policy=TRUE), "CsparseMatrix")
-g1W <- graph.adjacency(W, mode="directed", weighted="W")
-c1W <- clusters(g1W)
+g1W <- graph_from_adjacency_matrix(W, mode="directed", weighted="W")
+c1W <- components(g1W)
 all.equal(c1W$membership, res$comp.id)
 
 ## ----echo=dothis, eval=dothis-------------------------------------------------
-is.connected(g1)
+is_connected(g1)
 dg1 <- diameter(g1)
 dg1
-sp_mat <- shortest.paths(g1)
+sp_mat <- distances(g1)
 str(sp_mat)
 
 ## ----echo=dothis, eval=dothis-------------------------------------------------
