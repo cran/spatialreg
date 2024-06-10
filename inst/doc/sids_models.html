@@ -1535,7 +1535,7 @@ of functions in the spatial statistics module user’s manual <span class="citat
 <h2>Getting the data into R</h2>
 <p>We will be using the <strong>spdep</strong> and
 <strong>spatialreg</strong> packages, here version: spdep, version
-1.3-4, 2024-03-27, the <strong>sf</strong> package and the
+1.3-5, 2024-06-02, the <strong>sf</strong> package and the
 <strong>tmap</strong> package. The data from the sources referred to
 above is documented in the <a href="https://jakubnowosad.com/spData/reference/nc.sids.html">help
 page</a> for the <code>nc.sids</code> data set in
@@ -1545,8 +1545,8 @@ county boundaries for North Carolina were made available in the
 coordinates (longitude-latitude in decimal degrees) and are assumed to
 use the NAD27 datum.</p>
 <pre class="r"><code>library(spdep)
-nc &lt;- st_read(system.file(&quot;shapes/sids.shp&quot;, package=&quot;spData&quot;)[1], quiet=TRUE)
-st_crs(nc) &lt;- &quot;+proj=longlat +datum=NAD27&quot;
+nc &lt;- st_read(system.file(&quot;shapes/sids.gpkg&quot;, package=&quot;spData&quot;)[1], quiet=TRUE)
+#st_crs(nc) &lt;- &quot;+proj=longlat +datum=NAD27&quot;
 row.names(nc) &lt;- as.character(nc$FIPSNO)</code></pre>
 <pre class="r"><code>nc$ft.SID74 &lt;- sqrt(1000)*(sqrt(nc$SID74/nc$BIR74) + sqrt((nc$SID74+1)/nc$BIR74))
 nc$both &lt;- factor(paste(nc$L_id, nc$M_id, sep=&quot;:&quot;))</code></pre>

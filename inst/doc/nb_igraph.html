@@ -1565,18 +1565,18 @@ if (dothis) {
   sf_extSoftVersion()
 }</code></pre>
 <pre><code>##           GEOS           GDAL         proj.4 GDAL_with_GEOS     USE_PROJ_H 
-##       &quot;3.12.1&quot;        &quot;3.9.0&quot;        &quot;9.4.0&quot;         &quot;true&quot;         &quot;true&quot; 
+##       &quot;3.12.2&quot;        &quot;3.9.0&quot;        &quot;9.4.1&quot;         &quot;true&quot;         &quot;true&quot; 
 ##           PROJ 
-##        &quot;9.4.0&quot;</code></pre>
+##        &quot;9.4.1&quot;</code></pre>
 <pre class="r"><code>library(sf)
-columbus &lt;- st_read(system.file(&quot;shapes/columbus.shp&quot;, package=&quot;spData&quot;)[1])</code></pre>
+columbus &lt;- st_read(system.file(&quot;shapes/columbus.gpkg&quot;, package=&quot;spData&quot;)[1])</code></pre>
 <pre><code>## Reading layer `columbus&#39; from data source 
-##   `/home/rsb/lib/r_libs/spData/shapes/columbus.shp&#39; using driver `ESRI Shapefile&#39;
+##   `/home/rsb/lib/r_libs/spData/shapes/columbus.gpkg&#39; using driver `GPKG&#39;
 ## Simple feature collection with 49 features and 20 fields
 ## Geometry type: POLYGON
 ## Dimension:     XY
 ## Bounding box:  xmin: 5.874907 ymin: 10.78863 xmax: 11.28742 ymax: 14.74245
-## CRS:           NA</code></pre>
+## Projected CRS: Undefined Cartesian SRS with unknown unit</code></pre>
 <pre class="r"><code>row.names(columbus)[1:10]</code></pre>
 <pre><code>##  [1] &quot;1&quot;  &quot;2&quot;  &quot;3&quot;  &quot;4&quot;  &quot;5&quot;  &quot;6&quot;  &quot;7&quot;  &quot;8&quot;  &quot;9&quot;  &quot;10&quot;</code></pre>
 </div>
@@ -1678,8 +1678,10 @@ get to the <code>&quot;dgCMatrix&quot;</code> format used inside
 is set to <code>&quot;M&quot;</code> to indicate conversion from a matrix. The
 neighbour links are retreived correctly, as are the IDs:</p>
 <pre class="r"><code>nb_B1 &lt;- spdep::mat2listw(as(as(B, &quot;TsparseMatrix&quot;), &quot;CsparseMatrix&quot;),
-    style=&quot;B&quot;, zero.policy=TRUE)
-nb_B1$style</code></pre>
+    style=&quot;B&quot;, zero.policy=TRUE)</code></pre>
+<pre><code>## Warning in sn2listw(df, style = style, zero.policy = zero.policy, from_mat2listw = TRUE): no-neighbour observations found, set zero.policy to TRUE;
+## this warning will soon become an error</code></pre>
+<pre class="r"><code>nb_B1$style</code></pre>
 <pre><code>## [1] &quot;B&quot;</code></pre>
 <pre class="r"><code>all.equal(nb_B1$neighbours, col2, check.attributes=FALSE)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
