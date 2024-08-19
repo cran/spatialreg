@@ -1565,7 +1565,7 @@ if (dothis) {
   sf_extSoftVersion()
 }</code></pre>
 <pre><code>##           GEOS           GDAL         proj.4 GDAL_with_GEOS     USE_PROJ_H 
-##       &quot;3.12.2&quot;        &quot;3.9.0&quot;        &quot;9.4.1&quot;         &quot;true&quot;         &quot;true&quot; 
+##  &quot;3.13.0beta1&quot;        &quot;3.9.2&quot;        &quot;9.4.1&quot;         &quot;true&quot;         &quot;true&quot; 
 ##           PROJ 
 ##        &quot;9.4.1&quot;</code></pre>
 <pre class="r"><code>library(sf)
@@ -1602,8 +1602,9 @@ nb_q</code></pre>
 neighbour links for the 21st entity (noting that the print method
 reports the ID of the entity with no neighbours, not its number in
 <code>1:n</code>), and plot the resulting map of neighbours:</p>
-<pre class="r"><code>col2 &lt;- spdep::droplinks(nb_q, 21)
-nb_q[[21]]</code></pre>
+<pre class="r"><code>col2 &lt;- spdep::droplinks(nb_q, 21)</code></pre>
+<pre><code>## Warning in spdep::droplinks(nb_q, 21): neighbour object has 3 sub-graphs</code></pre>
+<pre class="r"><code>nb_q[[21]]</code></pre>
 <pre><code>## [1] 24 30 34</code></pre>
 <pre class="r"><code>col2[[21]]</code></pre>
 <pre><code>## [1] 0</code></pre>
@@ -1681,6 +1682,8 @@ neighbour links are retreived correctly, as are the IDs:</p>
     style=&quot;B&quot;, zero.policy=TRUE)</code></pre>
 <pre><code>## Warning in sn2listw(df, style = style, zero.policy = zero.policy, from_mat2listw = TRUE): no-neighbour observations found, set zero.policy to TRUE;
 ## this warning will soon become an error</code></pre>
+<pre><code>## Warning in sn2listw(df, style = style, zero.policy = zero.policy,
+## from_mat2listw = TRUE): neighbour object has 3 sub-graphs</code></pre>
 <pre class="r"><code>nb_B1$style</code></pre>
 <pre><code>## [1] &quot;B&quot;</code></pre>
 <pre class="r"><code>all.equal(nb_B1$neighbours, col2, check.attributes=FALSE)</code></pre>
@@ -1879,10 +1882,10 @@ class(g1)</code></pre>
 </div>
 <div id="converting-from-graph-to-symmetric-adjacency-matrix" class="section level3">
 <h3>Converting from graph to symmetric adjacency matrix</h3>
-<p>We can also convert this graph pack to the same matrix, but note that
-<code>get.adjacency</code> chooses a particular class of sparse matrix
-to be returned, so that the conversion process typically leads many
-matrices to fewer graph types, and back to fewer matrix types:</p>
+<p>We can also convert this graph back to the same matrix, but note that
+<code>as_adjacency_matrix</code> chooses a particular class of sparse
+matrix to be returned, so that the conversion process typically leads
+many matrices to fewer graph types, and back to fewer matrix types:</p>
 <pre class="r"><code># Matrix 1.4-2 vulnerability work-around
 ow &lt;- options(&quot;warn&quot;)$warn
 options(&quot;warn&quot;=2L)
@@ -1958,8 +1961,28 @@ to a maximum number of lag orders - the diameter, but which is unknown
 in advance (the largest lag order for which the number of links is
 greater than zero), we run into the problem of how to represent missing
 neighbour information.</p>
-<pre class="r"><code>nbl10 &lt;- spdep::nblag(col2, maxlag=10)
-vals &lt;- sapply(nbl10, function(x) sum(spdep::card(x)))
+<pre class="r"><code>nbl10 &lt;- spdep::nblag(col2, maxlag=10)</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 1 neighbour object has 3
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 2 neighbour object has 4
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 3 neighbour object has 8
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 4 neighbour object has 8
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 5 neighbour object has 14
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 6 neighbour object has 29
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 7 neighbour object has 43
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 8 neighbour object has 49
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 9 neighbour object has 49
+## sub-graphs</code></pre>
+<pre><code>## Warning in spdep::nblag(col2, maxlag = 10): lag 10 neighbour object has 49
+## sub-graphs</code></pre>
+<pre class="r"><code>vals &lt;- sapply(nbl10, function(x) sum(spdep::card(x)))
 zero &lt;- which(vals == 0)
 zero[1]-1</code></pre>
 <pre><code>## [1] 7</code></pre>

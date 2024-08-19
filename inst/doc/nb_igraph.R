@@ -122,6 +122,8 @@ if (!require("RSpectra", quietly=TRUE)) dothis <- FALSE
 class(B)
 object.size(B)
 if (!require("igraph", quietly=FALSE)) dothis <- FALSE
+
+## ----echo=dothis, eval=dothis-------------------------------------------------
 g1 <- graph_from_adjacency_matrix(B, mode="undirected")
 class(g1)
 object.size(g1)

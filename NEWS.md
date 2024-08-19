@@ -1,4 +1,14 @@
-# Version 1.3-4 (development)
+# Version 1.3-5 (development)
+
+* adding missing man page anchors
+
+* conforming with STRICT_R_HEADERS=1 
+
+* Condition on forthcoming `tmap` 4
+
+* #52 subgraph updates
+
+# Version 1.3-4 (2024-06-10)
 
 * migrate from ESRI Shapefile to GeoPackage #50
 

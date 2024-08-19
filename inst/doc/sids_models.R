@@ -18,6 +18,7 @@ nc$both <- factor(paste(nc$L_id, nc$M_id, sep=":"))
 is_tmap <- FALSE
 if (require(tmap, quietly=TRUE)) is_tmap <- TRUE
 is_tmap
+tmap4 <- packageVersion("tmap") >= "3.99"
 
 ## ----echo=TRUE, eval=TRUE-----------------------------------------------------
 gal_file <- system.file("weights/ncCC89.gal", package="spData")[1]
@@ -66,8 +67,11 @@ summary(ecarIVaw)
 
 ## ----eval=is_tmap, echo=TRUE--------------------------------------------------
 nc2$fitIV <- fitted.values(ecarIVaw)
-sf_use_s2(FALSE)
+if (tmap4) {
+  tm_shape(nc2) + tm_polygons(fill="fitIV", fill.scale=tm_scale(values="brewer.yl_or_br"), fill.legend=tm_legend(position=tm_pos_in("left", "bottom"), frame=FALSE, item.r = 0), lwd=0.01)
+} else {
 tm_shape(nc2) + tm_fill("fitIV")
+}
 
 ## ----echo=TRUE----------------------------------------------------------------
 ecarIawll <- spautolm(ft.SID74 ~ 1, data=nc2, listw=sids.nhbr.listw.4, weights=BIR74, family="CAR", llprof=seq(-0.1, 0.9020532358, length.out=100))
