@@ -1565,9 +1565,9 @@ if (dothis) {
   sf_extSoftVersion()
 }</code></pre>
 <pre><code>##           GEOS           GDAL         proj.4 GDAL_with_GEOS     USE_PROJ_H 
-##  &quot;3.13.0beta1&quot;        &quot;3.9.2&quot;        &quot;9.4.1&quot;         &quot;true&quot;         &quot;true&quot; 
+##       &quot;3.13.0&quot;       &quot;3.10.0&quot;        &quot;9.5.1&quot;         &quot;true&quot;         &quot;true&quot; 
 ##           PROJ 
-##        &quot;9.4.1&quot;</code></pre>
+##        &quot;9.5.1&quot;</code></pre>
 <pre class="r"><code>library(sf)
 columbus &lt;- st_read(system.file(&quot;shapes/columbus.gpkg&quot;, package=&quot;spData&quot;)[1])</code></pre>
 <pre><code>## Reading layer `columbus&#39; from data source 
@@ -1603,6 +1603,7 @@ neighbour links for the 21st entity (noting that the print method
 reports the ID of the entity with no neighbours, not its number in
 <code>1:n</code>), and plot the resulting map of neighbours:</p>
 <pre class="r"><code>col2 &lt;- spdep::droplinks(nb_q, 21)</code></pre>
+<pre><code>## Warning in spdep::droplinks(nb_q, 21): some observations have no neighbours</code></pre>
 <pre><code>## Warning in spdep::droplinks(nb_q, 21): neighbour object has 3 sub-graphs</code></pre>
 <pre class="r"><code>nb_q[[21]]</code></pre>
 <pre><code>## [1] 24 30 34</code></pre>
@@ -1684,6 +1685,8 @@ neighbour links are retreived correctly, as are the IDs:</p>
 ## this warning will soon become an error</code></pre>
 <pre><code>## Warning in sn2listw(df, style = style, zero.policy = zero.policy,
 ## from_mat2listw = TRUE): neighbour object has 3 sub-graphs</code></pre>
+<pre><code>## Warning in spdep::mat2listw(as(as(B, &quot;TsparseMatrix&quot;), &quot;CsparseMatrix&quot;), :
+## neighbour object has 3 sub-graphs</code></pre>
 <pre class="r"><code>nb_B1$style</code></pre>
 <pre><code>## [1] &quot;B&quot;</code></pre>
 <pre class="r"><code>all.equal(nb_B1$neighbours, col2, check.attributes=FALSE)</code></pre>
