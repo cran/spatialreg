@@ -17,8 +17,8 @@ nc$both <- factor(paste(nc$L_id, nc$M_id, sep=":"))
 ## ----echo=FALSE---------------------------------------------------------------
 is_tmap <- FALSE
 if (require(tmap, quietly=TRUE)) is_tmap <- TRUE
-is_tmap
-tmap4 <- packageVersion("tmap") >= "3.99"
+tmap4 <- FALSE
+if(is_tmap) tmap4 <- packageVersion("tmap") >= "3.99"
 
 ## ----echo=TRUE, eval=TRUE-----------------------------------------------------
 gal_file <- system.file("weights/ncCC89.gal", package="spData")[1]

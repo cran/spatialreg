@@ -46,7 +46,7 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
             warning("intercept-only model, Durbin invalid and set FALSE")
             Durbin <- FALSE
         }
-
+        have_factor_preds <- have_factor_preds_mf(mf)
 #
 	na.act <- attr(mf, "na.action")
 	if (!is.null(na.act)) {
@@ -57,7 +57,7 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                 con$pre_eig <- NULL
             }
 	}
-        if (missing(etype))etype <- "error"
+        if (missing(etype)) etype <- "error"
         if (etype == "Durbin") etype <- "emixed"
         if (missing(Durbin)) Durbin <- ifelse(etype == "error", FALSE, TRUE)
 # FIXME does this hold?
@@ -65,7 +65,10 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
 #            Durbin <- TRUE
 #            warning("formula Durbin requires row-standardised weights; set TRUE")
 #        }
-        if (is.logical(Durbin) && isTRUE(Durbin)) etype <- "emixed"
+        if (is.logical(Durbin) && isTRUE(Durbin)) {
+            etype <- "emixed"
+#            if (have_factor_preds) warn_factor_preds(have_factor_preds)
+        }
         if (is.formula(Durbin)) etype <- "emixed"
         if (is.logical(Durbin) && !isTRUE(Durbin)) etype <- "error"
         
@@ -106,53 +109,21 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
         dvars <- c(NCOL(x), 0L)
 
 	if (is.formula(Durbin) || isTRUE(Durbin)) {
-                prefix <- "lag"
-                if (isTRUE(Durbin)) {
-                    WX <- create_WX(x, listw, zero.policy=zero.policy,
-                        prefix=prefix)
-                } else {
-                    data1 <- data
-                    if (!is.null(na.act) && (inherits(na.act, "omit") ||
-                        inherits(na.act, "exclude"))) {
-                        data1 <- data1[-c(na.act),]
-                    }
-	            dmf <- lm(Durbin, data1, na.action=na.fail, 
-		        method="model.frame")
-#	            dmf <- lm(Durbin, data, na.action=na.action, 
-#		        method="model.frame")
-                    fx <- try(model.matrix(Durbin, dmf), silent=TRUE)
-                    if (inherits(fx, "try-error")) 
-                        stop("Durbin variable mis-match")
-                    WX <- create_WX(fx, listw, zero.policy=zero.policy,
-                        prefix=prefix)
-                    inds <- match(substring(colnames(WX), 5,
-	                nchar(colnames(WX))), colnames(x))
-                    if (anyNA(inds)) stop("WX variables not in X: ",
-                        paste(substring(colnames(WX), 5,
-                        nchar(colnames(WX)))[is.na(inds)], collapse=" "))
-                    icept <- grep("(Intercept)", colnames(x))
-                    iicept <- length(icept) > 0L
-                    if (iicept) {
-                        xn <- colnames(x)[-1]
-                    } else {
-                        xn <- colnames(x)
-                    }
-                    wxn <- substring(colnames(WX), nchar(prefix)+2,
-                        nchar(colnames(WX)))
-                    zero_fill <- NULL
-                    if (length((which(!(xn %in% wxn)))) > 0L) 
-                        zero_fill <- length(xn) + (which(!(xn %in% wxn)))
-                }
-                dvars <- c(NCOL(x), NCOL(WX))
-                if (is.formula(Durbin)) {
-                    attr(dvars, "f") <- Durbin
-                    attr(dvars, "inds") <- inds
-                    attr(dvars, "zero_fill") <- zero_fill
-                }
-		x <- cbind(x, WX)
-		m <- NCOL(x)
-		rm(WX)
-	}
+            res <- create_Durbin(Durbin=Durbin, 
+                have_factor_preds=have_factor_preds, x=x, listw=listw,
+                zero.policy=zero.policy, data=data, na.act=na.act,
+                formula=formula)
+            x <- res$x
+            dvars <- res$dvars
+            inds <-attr(dvars, "inds") 
+            xn <- attr(dvars, "xn")
+            wxn <- attr(dvars, "wxn")
+            zero_fill <- attr(dvars, "zero_fill")
+            formula_durbin_factors <- attr(dvars, "formula_durbin_factors")
+            attr(dvars, "xn") <- NULL
+            attr(dvars, "wxn") <- NULL
+        }
+
 # added aliased after trying boston with TOWN dummy
 	lm.base <- lm(y ~ x - 1, weights=weights)
 	aliased <- is.na(coefficients(lm.base))
@@ -501,6 +472,8 @@ errorsarlm <- function(formula, data = list(), listw, na.action, weights=NULL,
                 hf_calls=get("hf_calls", envir=env), intern_classic=iC,
                 pWinternal=pWinternal, weights=weights, emixedImps=emixedImps,
                 dvars=dvars), class=c("Sarlm"))
+        attr(ret, "have_factor_preds") <- have_factor_preds
+
         rm(env)
         GC <- gc()
 	if (zero.policy) {
@@ -574,6 +547,7 @@ lagsarlm <- function(formula, data = list(), listw,
 	mt <- terms(formula, data = data)
 	mf <- lm(formula, data, na.action=na.action, 
 		method="model.frame")
+        have_factor_preds <- have_factor_preds_mf(mf)
 	na.act <- attr(mf, "na.action")
 	if (!inherits(listw, "listw")) stop("No neighbourhood list")
 	can.sim <- FALSE
@@ -595,7 +569,10 @@ lagsarlm <- function(formula, data = list(), listw,
             Durbin <- TRUE
             warning("formula Durbin requires row-standardised weights; set TRUE")
         }
-        if (is.logical(Durbin) && isTRUE(Durbin)) type <- "mixed"
+        if (is.logical(Durbin) && isTRUE(Durbin)) {
+            type <- "mixed"
+#            if (have_factor_preds) warn_factor_preds(have_factor_preds)
+        }
         if (is.formula(Durbin)) type <- "mixed"
         if (is.logical(Durbin) && !isTRUE(Durbin)) type <- "lag"
 	switch(type, lag = if (!quiet) cat("\nSpatial lag model\n"),
@@ -627,50 +604,19 @@ lagsarlm <- function(formula, data = list(), listw,
         dvars <- c(NCOL(x), 0L)
 #FIXME
 	if (is.formula(Durbin) || isTRUE(Durbin)) {
-                prefix <- "lag"
-                if (isTRUE(Durbin)) {
-                    WX <- create_WX(x, listw, zero.policy=zero.policy,
-                        prefix=prefix)
-                } else {
-                    data1 <- data
-                    if (!is.null(na.act) && (inherits(na.act, "omit") ||
-                        inherits(na.act, "exclude"))) {
-                        data1 <- data1[-c(na.act),]
-                    }
-	            dmf <- lm(Durbin, data1, na.action=na.fail, 
-		        method="model.frame")
-                    fx <- try(model.matrix(Durbin, dmf), silent=TRUE)
-                    if (inherits(fx, "try-error")) 
-                        stop("Durbin variable mis-match")
-                    WX <- create_WX(fx, listw, zero.policy=zero.policy,
-                        prefix=prefix)
-                    inds <- match(substring(colnames(WX), 5,
-	                nchar(colnames(WX))), colnames(x))
-                    if (anyNA(inds)) stop("WX variables not in X: ",
-                        paste(substring(colnames(WX), 5,
-                        nchar(colnames(WX)))[is.na(inds)], collapse=" "))
-                    icept <- grep("(Intercept)", colnames(x))
-                    iicept <- length(icept) > 0L
-                    if (iicept) {
-                        xn <- colnames(x)[-1]
-                    } else {
-                        xn <- colnames(x)
-                    }
-                    wxn <- substring(colnames(WX), nchar(prefix)+2,
-                        nchar(colnames(WX)))
-                    zero_fill <- NULL
-                    if (length((which(!(xn %in% wxn)))) > 0L)
-                        zero_fill <- length(xn) + (which(!(xn %in% wxn)))
-                }
-                dvars <- c(NCOL(x), NCOL(WX))
-                if (is.formula(Durbin)) {
-                    attr(dvars, "f") <- Durbin
-                    attr(dvars, "inds") <- inds
-                    attr(dvars, "zero_fill") <- zero_fill
-                }
-		x <- cbind(x, WX)
-		m <- NCOL(x)
-		rm(WX)
+            res <- create_Durbin(Durbin=Durbin, 
+                have_factor_preds=have_factor_preds, x=x, listw=listw,
+                zero.policy=zero.policy, data=data, na.act=na.act,
+                formula=formula)
+            x <- res$x
+            dvars <- res$dvars
+            inds <-attr(dvars, "inds") 
+            xn <- attr(dvars, "xn")
+            wxn <- attr(dvars, "wxn")
+            zero_fill <- attr(dvars, "zero_fill")
+            formula_durbin_factors <- attr(dvars, "formula_durbin_factors")
+            attr(dvars, "xn") <- NULL
+            attr(dvars, "wxn") <- NULL
 	}
 # added aliased after trying boston with TOWN dummy
 	lm.base <- lm(y ~ x - 1)
@@ -874,6 +820,7 @@ lagsarlm <- function(formula, data = list(), listw,
                 f_calls=get("f_calls", envir=env),
                 hf_calls=get("hf_calls", envir=env), intern_classic=iC),
                 class=c("Sarlm"))
+        attr(ret, "have_factor_preds") <- have_factor_preds
         rm(env)
         GC <- gc()
 	if (zero.policy) {
@@ -943,6 +890,7 @@ sacsarlm <- function(formula, data = list(), listw, listw2=NULL, na.action,
         if (!inherits(formula, "formula")) formula <- as.formula(formula)
 	mt <- terms(formula, data = data)
 	mf <- lm(formula, data, na.action=na.action, method="model.frame")
+        have_factor_preds <- have_factor_preds_mf(mf)
 	na.act <- attr(mf, "na.action")
 	if (!inherits(listw, "listw")) stop("No neighbourhood list")
         if (is.null(listw2)) listw2 <- listw
@@ -991,52 +939,19 @@ sacsarlm <- function(formula, data = list(), listw, listw2=NULL, na.action,
         dvars <- c(m, 0L)
 #	if (type != "sac") {
 	if (is.formula(Durbin) || isTRUE(Durbin)) {
-                prefix <- "lag"
-                if (isTRUE(Durbin)) {
-                    WX <- create_WX(x, listw, zero.policy=zero.policy,
-                        prefix=prefix)
-                } else {
-                    data1 <- data
-                    if (!is.null(na.act) && (inherits(na.act, "omit") ||
-                        inherits(na.act, "exclude"))) {
-                        data1 <- data1[-c(na.act),]
-                    }
-	            dmf <- lm(Durbin, data1, na.action=na.fail, 
-		        method="model.frame")
-#	            dmf <- lm(Durbin, data, na.action=na.action, 
-#		        method="model.frame")
-                    fx <- try(model.matrix(Durbin, dmf), silent=TRUE)
-                    if (inherits(fx, "try-error")) 
-                        stop("Durbin variable mis-match")
-                    WX <- create_WX(fx, listw, zero.policy=zero.policy,
-                        prefix=prefix)
-                    inds <- match(substring(colnames(WX), 5,
-	                nchar(colnames(WX))), colnames(x))
-                    if (anyNA(inds)) stop("WX variables not in X: ",
-                        paste(substring(colnames(WX), 5,
-                        nchar(colnames(WX)))[is.na(inds)], collapse=" "))
-                    icept <- grep("(Intercept)", colnames(x))
-                    iicept <- length(icept) > 0L
-                    if (iicept) {
-                        xn <- colnames(x)[-1]
-                    } else {
-                        xn <- colnames(x)
-                    }
-                    wxn <- substring(colnames(WX), nchar(prefix)+2,
-                        nchar(colnames(WX)))
-                    zero_fill <- NULL
-                    if (length((which(!(xn %in% wxn)))) > 0L)
-                        zero_fill <- length(xn) + (which(!(xn %in% wxn)))
-                }
-                dvars <- c(NCOL(x), NCOL(WX))
-                if (is.formula(Durbin)) {
-                    attr(dvars, "f") <- Durbin
-                    attr(dvars, "inds") <- inds
-                    attr(dvars, "zero_fill") <- zero_fill
-                }
-		x <- cbind(x, WX)
-		m <- NCOL(x)
-		rm(WX)
+            res <- create_Durbin(Durbin=Durbin, 
+                have_factor_preds=have_factor_preds, x=x, listw=listw,
+                zero.policy=zero.policy, data=data, na.act=na.act,
+                formula=formula)
+            x <- res$x
+            dvars <- res$dvars
+            inds <-attr(dvars, "inds") 
+            xn <- attr(dvars, "xn")
+            wxn <- attr(dvars, "wxn")
+            zero_fill <- attr(dvars, "zero_fill")
+            formula_durbin_factors <- attr(dvars, "formula_durbin_factors")
+            attr(dvars, "xn") <- NULL
+            attr(dvars, "wxn") <- NULL
 	}
 	if (NROW(x) != length(listw2$neighbours))
 	    stop("Input data and neighbourhood list2 have different dimensions")
@@ -1311,6 +1226,7 @@ sacsarlm <- function(formula, data = list(), listw, listw2=NULL, na.action,
             optimHess=FALSE, insert=FALSE, interval1=interval1,
             interval2=interval2, timings=do.call("rbind", timings)[, c(1, 3)]),
             class=c("Sarlm"))
+        attr(ret, "have_factor_preds") <- have_factor_preds
         rm(env)
         GC <- gc()
         if (is.null(llprof)) ret$llprof <- llprof

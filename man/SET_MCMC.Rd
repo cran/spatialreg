@@ -31,7 +31,7 @@ By default the variables are taken from the environment which the function
 is called.}
   \item{listw, listw2}{a \code{listw} object created for example by \code{nb2listw}}
   \item{na.action}{a function (default \code{options("na.action")}), can also be \code{na.omit} or \code{na.exclude} with consequences for residuals and fitted values - in these cases the weights list will be subsetted to remove NAs in the data. It may be necessary to set zero.policy to TRUE because this subsetting may create no-neighbour observations. Note that only weights lists created without using the glist argument to \code{nb2listw} may be subsetted.}
-  \item{Durbin}{default FALSE (spatial lag model); if TRUE, full spatial Durbin model; if a formula object, the subset of explanatory variables to lag}
+  \item{Durbin}{default FALSE (spatial lag model); if TRUE, full spatial Durbin model; if a formula object, the subset of explanatory variables to lag. From version 1.3-7, the presence of factors (categorical variables) in the Durbin term will give a warning, as it is as yet unknown how spatial lags of categorical variables should be interpreted.}
   \item{type, etype}{(use the \sQuote{Durbin=} argument - retained for backwards compatibility only) default "lag", may be set to "mixed"; when "mixed", the lagged intercept is dropped for spatial weights style "W", that is row-standardised weights, but otherwise included; \dQuote{Durbin} may be used instead of \dQuote{mixed}}
   \item{zero.policy}{default NULL, use global option value; if TRUE assign zero to the lagged value of zones without 
 neighbours, if FALSE (default) assign NA}
@@ -99,6 +99,9 @@ neighbours, if FALSE (default) assign NA}
       \item{cc2}{default \code{0.2}; initial tuning parameter for M-H sampling}
     }}
 }}
+
+\details{From version 1.4.1, functions for models including spatially lagged independent variables warn on fitting if any of the right-hand side variables are factors. This is because the interpretation of coefficients that are not slopes is unclear when the variable is not interpretable on an unbounded line, such as factors. Factor variable names are shown with the suffix \dQuote{(F)}, others \dQuote{dy/dx} in output from impact methods. A discussion can be found at \url{https://github.com/rsbivand/eqc25_talk}.
+}
 
 \references{LeSage J and RK Pace (2009) Introduction to Spatial Econometrics. CRC Press, Boca Raton.
 }

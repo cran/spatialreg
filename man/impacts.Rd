@@ -66,6 +66,8 @@ If a model is fitted with the \dQuote{Durbin=} set to a formula subsetting the e
 When \code{Q} and \code{tr} are given, addition impact component results are provided for each step in the traces of powers of the weights matrix up to and including the \code{Q}'th power. This increases computing time because the output object is substantially increased in size in proportion to the size of \code{Q}.
 
 The method for \code{gmsar} objects is only for those of \code{type} \code{SARAR} output by \code{gstsls}, and assume that the spatial error coefficient is fixed, and thus omitted from the coefficients and covariance matrix used for simulation.
+
+From version 1.4.1, functions for models including spatially lagged independent variables warn on fitting if any of the right-hand side variables are factors. This is because the interpretation of coefficients that are not slopes is unclear when the variable is not interpretable on an unbounded line, such as factors. Factor variable names are shown with the suffix \dQuote{(F)}, others \dQuote{dy/dx} in output from impact methods. A discussion can be found at \url{https://github.com/rsbivand/eqc25_talk}.
 }
 
 \value{
@@ -98,22 +100,30 @@ require("sf", quietly=TRUE)
 columbus <- st_read(system.file("shapes/columbus.gpkg", package="spData")[1], quiet=TRUE)
 #require("spdep", quietly=TRUE)
 col.gal.nb <- spdep::read.gal(system.file("weights/columbus.gal", package="spData")[1])
+columbus$fEW <- factor(columbus$EW)
+columbus$fDISCBD <- ordered(cut(columbus$DISCBD, c(0, 1.5, 3, 4.5, 6)))
+run <- require("codingMatrices", quietly=TRUE)
+f <- formula(log(CRIME) ~ INC + HOVAL + fDISCBD + fEW)
 listw <- spdep::nb2listw(col.gal.nb)
 ev <- eigenw(listw)
-lobj <- lagsarlm(CRIME ~ INC + HOVAL, columbus, listw,
- control=list(pre_eig=ev))
+lobj <- lagsarlm(f, columbus, listw, control=list(pre_eig=ev))
 summary(lobj)
-mobj <- lagsarlm(CRIME ~ INC + HOVAL, columbus, listw, Durbin=TRUE,
- control=list(pre_eig=ev))
+if (run) {
+contrasts(columbus$fDISCBD) <- "code_diff"
+lobjd <- lagsarlm(f, columbus, listw, control=list(pre_eig=ev))
+}
+mobj <- lagsarlm(f, columbus, listw, Durbin=TRUE, control=list(pre_eig=ev))
 summary(mobj)
-mobj1 <- lagsarlm(CRIME ~ INC + HOVAL, columbus, listw, Durbin= ~ INC,
- control=list(pre_eig=ev))
+mobj1 <- lagsarlm(f, columbus, listw, Durbin= ~ INC + HOVAL, control=list(pre_eig=ev))
 summary(mobj1)
 W <- as(listw, "CsparseMatrix")
 trMatc <- trW(W, type="mult")
 trMC <- trW(W, type="MC")
 set.seed(1)
 impacts(lobj, listw=listw)
+if (run) {
+impacts(lobjd, listw=listw)
+}
 impacts(lobj, tr=trMatc)
 impacts(lobj, tr=trMC)
 impacts(lobj, evalues=ev)
@@ -131,21 +141,21 @@ try(impacts(mobj, evalues=ev), silent=TRUE)
 }
 summary(impacts(mobj, tr=trMatc, R=200), short=TRUE, zstats=TRUE)
 summary(impacts(mobj1, tr=trMatc, R=200), short=TRUE, zstats=TRUE)
-xobj <- lmSLX(CRIME ~ INC + HOVAL, columbus, listw)
+xobj <- lmSLX(f, columbus, listw)
 summary(impacts(xobj))
-eobj <- errorsarlm(CRIME ~ INC + HOVAL, columbus, listw, etype="emixed")
+eobj <- errorsarlm(f, columbus, listw, etype="emixed")
 summary(impacts(eobj), adjust_k=TRUE)
 \dontrun{
-mobj1 <- lagsarlm(CRIME ~ INC + HOVAL, columbus, listw, type="mixed", 
+mobj1 <- lagsarlm(f, columbus, listw, type="mixed", 
 method="Matrix", control=list(fdHess=TRUE))
 summary(mobj1)
 set.seed(1)
 summary(impacts(mobj1, tr=trMatc, R=1000), zstats=TRUE, short=TRUE)
 summary(impacts(mobj, tr=trMatc, R=1000), zstats=TRUE, short=TRUE)
-mobj2 <- lagsarlm(CRIME ~ INC + HOVAL, columbus, listw, type="mixed", 
+mobj2 <- lagsarlm(f, columbus, listw, type="mixed", 
 method="Matrix", control=list(fdHess=TRUE, optimHess=TRUE))
 summary(impacts(mobj2, tr=trMatc, R=1000), zstats=TRUE, short=TRUE)
-mobj3 <- lagsarlm(CRIME ~ INC + HOVAL, columbus, listw, type="mixed", 
+mobj3 <- lagsarlm(f, columbus, listw, type="mixed", 
 method="spam", control=list(fdHess=TRUE))
 summary(impacts(mobj3, tr=trMatc, R=1000), zstats=TRUE, short=TRUE)
 }
@@ -155,7 +165,7 @@ Wb <- as(spdep::nb2listw(boston.soi), "CsparseMatrix")
 trMatb <- trW(Wb, type="mult")
 gp2mMi <- lagsarlm(log(CMEDV) ~ CRIM + ZN + INDUS + CHAS + I(NOX^2) + 
 I(RM^2) +  AGE + log(DIS) + log(RAD) + TAX + PTRATIO + B + log(LSTAT), 
-data=boston.c, spdep::nb2listw(boston.soi), type="mixed", method="Matrix", 
+data=boston.c, spdep::nb2listw(boston.soi), Durbin=TRUE, method="Matrix", 
 control=list(fdHess=TRUE), trs=trMatb)
 summary(gp2mMi)
 summary(impacts(gp2mMi, tr=trMatb, R=1000), zstats=TRUE, short=TRUE)

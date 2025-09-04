@@ -38,6 +38,7 @@ spBreg_lag <- function(formula, data = list(), listw, na.action, Durbin, type,
     if (!inherits(formula, "formula")) formula <- as.formula(formula)
     mt <- terms(formula, data = data)
     mf <- lm(formula, data, na.action=na.action,  method="model.frame")
+    have_factor_preds <- have_factor_preds_mf(mf)
     na.act <- attr(mf, "na.action")
     if (!inherits(listw, "listw")) stop("No neighbourhood list")
     can.sim <- FALSE
@@ -83,52 +84,19 @@ spBreg_lag <- function(formula, data = list(), listw, na.action, Durbin, type,
 #        WX <- create_WX(x, listw, zero.policy=zero.policy, prefix="lag")
 #FIXME
     if (is.formula(Durbin) || isTRUE(Durbin)) {
-        prefix <- "lag"
-        if (isTRUE(Durbin)) {
-            WX <- create_WX(x, listw, zero.policy=zero.policy,
-                prefix=prefix)
-        } else {
-            data1 <- data
-            if (!is.null(na.act) && (inherits(na.act, "omit") ||
-                inherits(na.act, "exclude"))) {
-                data1 <- data1[-c(na.act),]
-            }
-	    dmf <- lm(Durbin, data1, na.action=na.fail, 
-	        method="model.frame")
-#            dmf <- lm(Durbin, data, na.action=na.action, 
-#	        method="model.frame")
-            fx <- try(model.matrix(Durbin, dmf), silent=TRUE)
-            if (inherits(fx, "try-error")) 
-                stop("Durbin variable mis-match")
-            WX <- create_WX(fx, listw, zero.policy=zero.policy,
-                prefix=prefix)
-            inds <- match(substring(colnames(WX), 5,
-	        nchar(colnames(WX))), colnames(x))
-            if (anyNA(inds)) stop("WX variables not in X: ",
-                paste(substring(colnames(WX), 5,
-                nchar(colnames(WX)))[is.na(inds)], collapse=" "))
-            icept <- grep("(Intercept)", colnames(x))
-            iicept <- length(icept) > 0L
-            if (iicept) {
-                xn <- colnames(x)[-1]
-            } else {
-                xn <- colnames(x)
-            }
-            wxn <- substring(colnames(WX), nchar(prefix)+2,
-                nchar(colnames(WX)))
-            zero_fill <- NULL
-            if (length((which(!(xn %in% wxn)))) > 0L)
-                zero_fill <- length(xn) + (which(!(xn %in% wxn)))
-        }
-        dvars <- c(NCOL(x), NCOL(WX))
-        if (is.formula(Durbin)) {
-            attr(dvars, "f") <- Durbin
-            attr(dvars, "inds") <- inds
-            attr(dvars, "zero_fill") <- zero_fill
-        }
-	x <- cbind(x, WX)
-	m <- NCOL(x)
-	rm(WX)
+            res <- create_Durbin(Durbin=Durbin, 
+                have_factor_preds=have_factor_preds, x=x, listw=listw,
+                zero.policy=zero.policy, data=data, na.act=na.act,
+                formula=formula)
+            x <- res$x
+            dvars <- res$dvars
+            inds <-attr(dvars, "inds") 
+            xn <- attr(dvars, "xn")
+            wxn <- attr(dvars, "wxn")
+            zero_fill <- attr(dvars, "zero_fill")
+            formula_durbin_factors <- attr(dvars, "formula_durbin_factors")
+            attr(dvars, "xn") <- NULL
+            attr(dvars, "wxn") <- NULL
     }
 #        x <- cbind(x, WX)
 #        rm(WX)
@@ -381,6 +349,7 @@ spBreg_lag <- function(formula, data = list(), listw, na.action, Durbin, type,
     attr(res, "acc_rate") <- acc_rate
     attr(res, "dvars") <- dvars
     attr(res, "MH") <- priors$rhoMH
+    attr(res, "have_factor_preds") <- have_factor_preds
     class(res) <- c("MCMC_sar_G", class(res))
     res
 
@@ -401,7 +370,7 @@ impacts.MCMC_sar_G <- function(obj, ..., tr=NULL, listw=NULL, evalues=NULL,
     beta <- means[1:(length(means)-2)]
     icept <- grep("(Intercept)", names(beta))
     iicept <- length(icept) > 0L
-    zero_fill <- NULL
+    zero_fill <- integer(0L)
     dvars <- NULL
     samples <- as.matrix(obj)
     interval <- attr(obj, "control")$interval
@@ -468,6 +437,8 @@ impacts.MCMC_sar_G <- function(obj, ..., tr=NULL, listw=NULL, evalues=NULL,
 
     R <- nrow(samples)
 
+    bnames <- update_bnames(bnames,
+        have_factor_preds=attr(obj, "have_factor_preds"))
     res <- intImpacts(rho=rho, beta=beta, P=P, n=n, mu=NULL, Sigma=NULL,
         irho=irho, drop2beta=drop2beta, bnames=bnames, interval=interval,
         type=type, tr=tr, R=R, listw=listw, evalues=evalues, tol=NULL,
@@ -521,6 +492,7 @@ spBreg_err <- function(formula, data = list(), listw, na.action, Durbin, etype,
     if (!inherits(formula, "formula")) formula <- as.formula(formula)
     mt <- terms(formula, data = data)
     mf <- lm(formula, data, na.action=na.action,  method="model.frame")
+    have_factor_preds <- have_factor_preds_mf(mf)
     na.act <- attr(mf, "na.action")
     if (!inherits(listw, "listw")) stop("No neighbourhood list")
     can.sim <- FALSE
@@ -561,53 +533,21 @@ spBreg_err <- function(formula, data = list(), listw, na.action, Durbin, etype,
     dvars <- c(NCOL(x), 0L)
 
     if (is.formula(Durbin) || isTRUE(Durbin)) {
-        prefix <- "lag"
-        if (isTRUE(Durbin)) {
-            WX <- create_WX(x, listw, zero.policy=zero.policy,
-                prefix=prefix)
-        } else {
-            data1 <- data
-            if (!is.null(na.act) && (inherits(na.act, "omit") ||
-                inherits(na.act, "exclude"))) {
-                data1 <- data1[-c(na.act),]
-            }
-	    dmf <- lm(Durbin, data1, na.action=na.fail, 
-	        method="model.frame")
-#            dmf <- lm(Durbin, data, na.action=na.action, 
-#	        method="model.frame")
-            fx <- try(model.matrix(Durbin, dmf), silent=TRUE)
-            if (inherits(fx, "try-error")) 
-                stop("Durbin variable mis-match")
-            WX <- create_WX(fx, listw, zero.policy=zero.policy,
-                prefix=prefix)
-            inds <- match(substring(colnames(WX), 5,
-	        nchar(colnames(WX))), colnames(x))
-            if (anyNA(inds)) stop("WX variables not in X: ",
-                paste(substring(colnames(WX), 5,
-                nchar(colnames(WX)))[is.na(inds)], collapse=" "))
-            icept <- grep("(Intercept)", colnames(x))
-            iicept <- length(icept) > 0L
-            if (iicept) {
-                xn <- colnames(x)[-1]
-            } else {
-                xn <- colnames(x)
-            }
-            wxn <- substring(colnames(WX), nchar(prefix)+2,
-                nchar(colnames(WX)))
-            zero_fill <- NULL
-            if (length((which(!(xn %in% wxn)))) > 0L)
-                zero_fill <- length(xn) + (which(!(xn %in% wxn)))
-        }
-        dvars <- c(NCOL(x), NCOL(WX))
-        if (is.formula(Durbin)) {
-            attr(dvars, "f") <- Durbin
-            attr(dvars, "inds") <- inds
-            attr(dvars, "zero_fill") <- zero_fill
-        }
-	x <- cbind(x, WX)
-        xcolnames <- colnames(x)
-	m <- NCOL(x)
-	rm(WX)
+            res <- create_Durbin(Durbin=Durbin, 
+                have_factor_preds=have_factor_preds, x=x, listw=listw,
+                zero.policy=zero.policy, data=data, na.act=na.act,
+                formula=formula)
+            x <- res$x
+            xcolnames <- colnames(x)
+	    m <- NCOL(x)
+            dvars <- res$dvars
+            inds <-attr(dvars, "inds") 
+            xn <- attr(dvars, "xn")
+            wxn <- attr(dvars, "wxn")
+            zero_fill <- attr(dvars, "zero_fill")
+            formula_durbin_factors <- attr(dvars, "formula_durbin_factors")
+            attr(dvars, "xn") <- NULL
+            attr(dvars, "wxn") <- NULL
     }
 #        x <- cbind(x, WX)
 #        rm(WX)
@@ -938,6 +878,7 @@ spBreg_err <- function(formula, data = list(), listw, na.action, Durbin, etype,
     attr(res, "n") <- n
     attr(res, "k") <- k
     attr(res, "MH") <- priors$lambdaMH
+    attr(res, "have_factor_preds") <- have_factor_preds
     class(res) <- c("MCMC_sem_G", class(res))
     res
 
@@ -998,6 +939,7 @@ spBreg_sac <- function(formula, data = list(), listw, listw2=NULL, na.action,
     if (!inherits(formula, "formula")) formula <- as.formula(formula)
     mt <- terms(formula, data = data)
     mf <- lm(formula, data, na.action=na.action,  method="model.frame")
+    have_factor_preds <- have_factor_preds_mf(mf)
     na.act <- attr(mf, "na.action")
     if (!inherits(listw, "listw")) stop("No neighbourhood list")
     if (is.null(listw2)) listw2 <- listw
@@ -1055,52 +997,19 @@ spBreg_sac <- function(formula, data = list(), listw, listw2=NULL, na.action,
 #        WX <- create_WX(x, listw, zero.policy=zero.policy, prefix="lag")
 #FIXME
     if (is.formula(Durbin) || isTRUE(Durbin)) {
-        prefix <- "lag"
-        if (isTRUE(Durbin)) {
-            WX <- create_WX(x, listw, zero.policy=zero.policy,
-                prefix=prefix)
-        } else {
-            data1 <- data
-            if (!is.null(na.act) && (inherits(na.act, "omit") ||
-                inherits(na.act, "exclude"))) {
-                data1 <- data1[-c(na.act),]
-            }
-	    dmf <- lm(Durbin, data1, na.action=na.fail, 
-	        method="model.frame")
-#            dmf <- lm(Durbin, data, na.action=na.action, 
-#	        method="model.frame")
-            fx <- try(model.matrix(Durbin, dmf), silent=TRUE)
-            if (inherits(fx, "try-error")) 
-                stop("Durbin variable mis-match")
-            WX <- create_WX(fx, listw, zero.policy=zero.policy,
-                prefix=prefix)
-            inds <- match(substring(colnames(WX), 5,
-	        nchar(colnames(WX))), colnames(x))
-            if (anyNA(inds)) stop("WX variables not in X: ",
-                paste(substring(colnames(WX), 5,
-                nchar(colnames(WX)))[is.na(inds)], collapse=" "))
-            icept <- grep("(Intercept)", colnames(x))
-            iicept <- length(icept) > 0L
-            if (iicept) {
-                xn <- colnames(x)[-1]
-            } else {
-                xn <- colnames(x)
-            }
-            wxn <- substring(colnames(WX), nchar(prefix)+2,
-                nchar(colnames(WX)))
-            zero_fill <- NULL
-            if (length((which(!(xn %in% wxn)))) > 0L)
-                zero_fill <- length(xn) + (which(!(xn %in% wxn)))
-        }
-        dvars <- c(NCOL(x), NCOL(WX))
-        if (is.formula(Durbin)) {
-            attr(dvars, "f") <- Durbin
-            attr(dvars, "inds") <- inds
-            attr(dvars, "zero_fill") <- zero_fill
-        }
-	x <- cbind(x, WX)
-	m <- NCOL(x)
-	rm(WX)
+            res <- create_Durbin(Durbin=Durbin, 
+                have_factor_preds=have_factor_preds, x=x, listw=listw,
+                zero.policy=zero.policy, data=data, na.act=na.act,
+                formula=formula)
+            x <- res$x
+            dvars <- res$dvars
+            inds <- attr(dvars, "inds") 
+            xn <- attr(dvars, "xn")
+            wxn <- attr(dvars, "wxn")
+            zero_fill <- attr(dvars, "zero_fill")
+            formula_durbin_factors <- attr(dvars, "formula_durbin_factors")
+            attr(dvars, "xn") <- NULL
+            attr(dvars, "wxn") <- NULL
     }
     if (NROW(x) != length(listw2$neighbours))
         stop("Input data and neighbourhood list2 have different dimensions")
@@ -1246,8 +1155,12 @@ spBreg_sac <- function(formula, data = list(), listw, listw2=NULL, na.action,
         ssave[iter] = as.vector(sige)
 
         #update lambda using M-H
-        i1 = max(which(detval21 <= (lambda + gsize2)))
-	i2 = max(which(detval21 <= (lambda - gsize2)))
+        i1 <- which(detval21 <= (lambda + gsize2))
+        if (length(i1) == 0L) i1 <- -Inf
+        else i1 = max(i1)
+        i2 <- which(detval21 <= (lambda - gsize2))
+	if (length(i2) == 0L) i2 <- -Inf
+        else i2 = max(i2)
         index = round((i1+i2)/2)
         if (!is.finite(index)) index = 1 #Fixed this
 	detm = detval22[index]
@@ -1262,8 +1175,12 @@ spBreg_sac <- function(formula, data = list(), listw, listw2=NULL, na.action,
 	        lambda2 = lambda + cc2*rnorm(1)
 	    }
         }
-        i1 = max(which(detval21 <= (lambda2 + gsize2)))
-	i2 = max(which(detval21 <= (lambda2 - gsize2)))
+        i1 <- which(detval21 <= (lambda2 + gsize2))
+        if (length(i1) == 0L) i1 <- -Inf
+        else i1 = max(i1)
+        i2 <- which(detval21 <= (lambda2 - gsize2))
+	if (length(i2) == 0L) i2 <- -Inf
+        else i2 = max(i2)
         index = round((i1+i2)/2)
         if (!is.finite(index)) index = 1 #Fixed this
 	detm = detval22[index]
@@ -1290,8 +1207,12 @@ spBreg_sac <- function(formula, data = list(), listw, listw2=NULL, na.action,
         lsave[iter] = as.vector(lambda)
 
 ##      % metropolis step to get rho update
-        i1 = max(which(detval11 <= (rho + gsize1)))
-        i2 = max(which(detval11 <= (rho - gsize1)))
+        i1 <- which(detval11 <= (rho + gsize1))
+        if (length(i1) == 0L) i1 <- -Inf
+        else i1 = max(i1)
+        i2 <- which(detval11 <= (rho - gsize1))
+	if (length(i2) == 0L) i2 <- -Inf
+        else i2 = max(i2)
         index = round((i1+i2)/2)
         if (!is.finite(index)) index = 1 
 	detm = detval12[index]
@@ -1310,8 +1231,12 @@ spBreg_sac <- function(formula, data = list(), listw, listw2=NULL, na.action,
 	        rho2 = rho + cc1*rnorm(1)
 	    }
         }
-        i1 = max(which(detval11 <= (rho2 + gsize1)))
-	i2 = max(which(detval11 <= (rho2 - gsize1)))
+        i1 <- which(detval11 <= (rho2 + gsize1))
+        if (length(i1) == 0L) i1 <- -Inf
+        else i1 = max(i1)
+        i2 <- which(detval11 <= (rho2 - gsize1))
+	if (length(i2) == 0L) i2 <- -Inf
+        else i2 = max(i2)
         index = round((i1+i2)/2)
         if (!is.finite(index)) index = 1 
 	detm = detval12[index]
@@ -1368,6 +1293,7 @@ spBreg_sac <- function(formula, data = list(), listw, listw2=NULL, na.action,
     attr(res, "acc_rate1") <- acc_rate1
     attr(res, "acc_rate2") <- acc_rate2
     attr(res, "dvars") <- dvars
+    attr(res, "have_factor_preds") <- have_factor_preds
     class(res) <- c("MCMC_sac_G", class(res))
     res
 

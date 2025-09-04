@@ -1,4 +1,16 @@
-# Version 1.3-6 (development)
+# Version 1.4-1 (development)
+
+* import `spdep` >= 1.4.1
+
+* annotate `impacts` output with `"dy/dx"` or `"(F)"` to distinguish continuous and categorical independent variables
+
+* suggest `codingMatrices` to expand examples with factors (categorical variables)
+
+* introduce warnings for factors (categorical variables) in Durbin models (`errorsarlm`, `lagsarlm`, `sacsarlm`, `spBreg_lag`, `spBreg_err`, `spBreg_sac` and `lm.SLX`)
+
+* convert `error` to `Rf_error` in `src/ml_sse.c` to accommodate R_NO_REMAP
+
+# Version 1.3-6 (2024-12-02)
 
 * Remove remaining `spData` ESRI shapefile use
 

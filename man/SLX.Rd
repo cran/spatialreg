@@ -37,7 +37,7 @@ is called.}
   \item{listw}{a \code{listw} object created for example by \code{nb2listw}}
   \item{na.action}{a function (default \code{options("na.action")}), can also be \code{na.omit} or \code{na.exclude} with consequences for residuals and fitted values - in these cases the spatial weights list will be subsetted to remove NAs in the data. It may be necessary to set zero.policy to TRUE because this subsetting may create no-neighbour observations. Note that only weights lists created without using the glist argument to \code{nb2listw} may be subsetted.}
   \item{weights}{an optional vector of weights to be used in the fitting process. Non-NULL weights can be used to indicate that different observations have different variances (with the values in weights being inversely proportional to the variances); or equivalently, when the elements of weights are positive integers w_i, that each response y_i is the mean of w_i unit-weight observations (including the case that there are w_i observations equal to y_i and the data have been summarized) - \code{\link{lm}}}
-  \item{Durbin}{default TRUE for \code{lmSLX} (Durbin model including WX); if TRUE, full spatial Durbin model; if a formula object, the subset of explanatory variables to lag}
+  \item{Durbin}{default TRUE for \code{lmSLX} (Durbin model including WX); if TRUE, full spatial Durbin model; if a formula object, the subset of explanatory variables to lag. From version 1.3-7, the presence of factors (categorical variables) in the Durbin term will give a warning, as it is as yet unknown how spatial lags of categorical variables should be interpreted.}
   \item{zero.policy}{default NULL, use global option value; if TRUE assign zero to the lagged value of zones without neighbours, if FALSE assign NA}
   \item{return_impacts}{default TRUE; may be set FALSE to avoid problems calculating impacts with aliased variables}
   \item{digits}{the number of significant digits to use when printing}
@@ -54,7 +54,11 @@ for the data on which the model was fitted. Should have row names corresponding 
 }
 
 \value{
-The \code{lmSLX} function returns an \dQuote{lm} object with a \dQuote{mixedImps} list of three impact matrixes (impacts and standard errors) for direct, indirect and total impacts; total impacts calculated using a simplified local copy of the estimable function from the gmodels package.
+The \code{lmSLX} function returns an \dQuote{lm} object with a \dQuote{mixedImps} list of three impact matrixes (impacts and standard errors) for direct, indirect and total impacts; total impacts and their standard errors calculated using \code{multcomp::glht}.
+}
+
+
+\details{From version 1.4.1, functions for models including spatially lagged independent variables warn on fitting if any of the right-hand side variables are factors. This is because the interpretation of coefficients that are not slopes is unclear when the variable is not interpretable on an unbounded line, such as factors. Factor variable names are shown with the suffix \dQuote{(F)}, others \dQuote{dy/dx} in output from impact methods. A discussion can be found at \url{https://github.com/rsbivand/eqc25_talk}.
 }
 
 \seealso{\code{\link{lm}}
