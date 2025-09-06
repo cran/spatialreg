@@ -1,6 +1,6 @@
-d540b22365bb022c87c7eee34a542450 *DESCRIPTION
+ff5d6d7f61efdde3b41190af54866585 *DESCRIPTION
 7b8189c8667a9708c510e5fcd883a87d *NAMESPACE
-0012eedd9309174e9a13d31b6327bcb3 *NEWS.md
+15b7c5c2c303826ccd32bb88cff5c11e *NEWS.md
 9e7ec21de781a18c253ae194d570d34e *R/AAA.R
 17e710733cec3c63e066d17fc50c1a1f *R/ME.R
 bd4209cc8e0f3121aff18d89a2fa733d *R/ML_models.R
@@ -22,7 +22,7 @@ b2bd6801fbe7aa35438de00b619d2e1a *R/mcmcsamp.R
 0843d754f1322f2edc80744acc9d8a7d *R/predict.sarlm.R
 650e974d52d6740fbdb3786e4e9624b3 *R/s2sls.R
 18655d155670eb51cce3466ac288e17f *R/sarlm_functions.R
-7b9bbd17cc88233c19ed9edad045407b *R/sarlm_tests.R
+12c113456175c63ade828430bf66f937 *R/sarlm_tests.R
 61c54d7cb924367ee31e071539052c3c *R/spBreg.R
 73d53d5f280145d904463326775e2871 *R/spChkOption.R
 9c2b665ce35244da21d8c0411fc755b7 *R/sparse_mat.R
@@ -42,7 +42,7 @@ d59ba43a0765f67735ed752ce80b252b *inst/doc/nb_igraph.html
 f1c1174b47097fced683df7eaf0c15ed *inst/doc/sids_models.Rmd
 71a48c1576a5d182848f86d3affaa2c7 *inst/doc/sids_models.html
 34b5937d3c513f5f378009fb21473bed *inst/tinytest/test_Durbin.R
-3f37e9627ca29bea0c657e4f9df1f77f *inst/tinytest/test_Durbin_factor.R
+4bb5879ea49a651a5ece47c602c5056e *inst/tinytest/test_Durbin_factor.R
 251c04c5bf3e6d7370f35b277d50e19a *inst/tinytest/test_SLX_no_intercept.R
 8a5411d71521a2385647c3d70a8a316c *inst/tinytest/test_SLX_not_W.R
 ab5595bceef67d8cfbd6f39a92664fd1 *inst/tinytest/test_TR_20_07_20.R
